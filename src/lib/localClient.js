@@ -154,6 +154,38 @@ export const localClient = {
     }
   },
   
+  // Integrations stubs — pages call these via base44.integrations.Core.*
+  integrations: {
+    Core: {
+      async InvokeLLM({ prompt, response_json_schema, file_urls, add_context_from_internet } = {}) {
+        console.warn('[SOLACE] InvokeLLM called — no backend connected yet. Returning mock.');
+        // Return a plausible mock so the UI can render
+        const mock = { title: 'AI Response Placeholder', summary: 'Connect an AI backend to get real responses.' };
+        return { data: response_json_schema ? mock : prompt };
+      },
+      async UploadFile({ file } = {}) {
+        // Convert file to local blob URL for preview
+        if (file) {
+          const url = URL.createObjectURL(file);
+          return { data: { file_url: url } };
+        }
+        return { data: { file_url: '' } };
+      },
+      async SendEmail(params = {}) {
+        console.warn('[SOLACE] SendEmail stub called:', params);
+        return { data: { success: true } };
+      },
+      async SendSMS(params = {}) {
+        console.warn('[SOLACE] SendSMS stub called:', params);
+        return { data: { success: true } };
+      },
+      async GenerateImage(params = {}) {
+        console.warn('[SOLACE] GenerateImage stub called:', params);
+        return { data: { url: '' } };
+      }
+    }
+  },
+
   // Storage helpers for app use
   storage: {
     get: getStorage,
