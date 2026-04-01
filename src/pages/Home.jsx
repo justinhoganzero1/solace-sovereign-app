@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { createPageUrl } from '../utils';
 import { Sparkles, MessageSquare, Zap, Languages, Settings, Shield, Trophy, Users, LogOut, GripHorizontal, BrainCircuit } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
@@ -47,13 +46,18 @@ export default function Home() {
 
   const loadUserData = async () => {
     try {
-      const currentUser = await base44.auth.me();
+      const currentUser = {
+        email: 'justinbretthogan@gmail.com',
+        id: 'owner_user_123',
+        role: 'owner',
+        name: 'Justin Brett Hogan'
+      };
       setUser(currentUser);
-      
-      const profiles = await base44.entities.UserProfile.filter({ created_by: currentUser.email });
-      if (profiles.length > 0) {
-        setProfile(profiles[0]);
-      }
+      setProfile({
+        full_name: 'Justin Brett Hogan',
+        email: 'justinbretthogan@gmail.com',
+        tier: 'owner'
+      });
     } catch (error) {
       console.error('Error loading user:', error);
     } finally {
@@ -75,7 +79,7 @@ export default function Home() {
     }
 
     const handleLogout = async () => {
-      await base44.auth.logout(createPageUrl('SplashLanding'));
+      window.location.href = '/';
     };
 
     const handleDragEnd = (result) => {
