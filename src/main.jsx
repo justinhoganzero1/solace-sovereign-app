@@ -84,7 +84,7 @@ const specialists = [
   { name: 'Digital Mall', icon: 'mall', desc: 'Digital marketplace', ci: 3 },
   { name: 'Family Hub', icon: 'family', desc: 'Family management tools', ci: 2 },
   { name: 'Professional Hub', icon: 'professional', desc: 'Career & business tools', ci: 4 },
-  { name: 'Training Center', icon: 'training', desc: 'Oracle training system', ci: 0 },
+  { name: 'Training Center', icon: 'training', desc: 'Oracle training system', ci: 0, page: 'OracleTrainingCenter' },
   { name: 'Community Hub', icon: 'community', desc: 'Social & community features', ci: 5 },
   { name: 'Crisis Hub', icon: 'crisis', desc: 'Emergency support system', ci: 6 },
   { name: 'Live Vision', icon: 'vision', desc: 'Camera & AR features', ci: 1 },
