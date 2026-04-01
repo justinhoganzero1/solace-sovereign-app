@@ -8,8 +8,24 @@
     <meta name="description" content="SOLACE - Your Sovereign AI Companion" />
     <title>SOLACE - Your Sovereign AI Companion</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0; background:#000; color:#fff; font-family:system-ui;">
+    <div id="root">
+      <div id="pre-react" style="padding:40px; text-align:center;">
+        <h1 style="color:#fbbf24; font-size:2rem;">SOLACE is loading...</h1>
+        <p style="color:#999;">If you see this for more than 3 seconds, React failed to mount.</p>
+        <pre id="load-error" style="color:#f87171; margin-top:20px; text-align:left; max-width:800px; margin-left:auto; margin-right:auto; white-space:pre-wrap;"></pre>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function(e) {
+        var el = document.getElementById('load-error');
+        if (el) el.textContent += 'ERROR: ' + e.message + ' at ' + (e.filename||'') + ':' + (e.lineno||'') + '\n';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        var el = document.getElementById('load-error');
+        if (el) el.textContent += 'PROMISE REJECTED: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n';
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
