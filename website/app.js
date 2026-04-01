@@ -3,10 +3,20 @@
  * Handles app downloads and dynamic content
  */
 
+// API Base URL
+const API_BASE = 'http://localhost:3000';
+
+// Track download
+function trackDownload(appId) {
+  fetch(`${API_BASE}/api/apps/${appId}/track-download`, {
+    method: 'POST'
+  }).catch(err => console.error('Failed to track download:', err));
+}
+
 // Load published apps
 async function loadPublishedApps() {
   try {
-    const response = await fetch('/api/published-apps');
+    const response = await fetch(`${API_BASE}/api/published-apps`);
     const apps = await response.json();
 
     const appsContainer = document.getElementById('apps-list');
@@ -25,7 +35,7 @@ async function loadPublishedApps() {
           <span>⬇️ ${app.downloads || 0} downloads</span>
           <span>⭐ ${app.rating || 'New'}</span>
         </div>
-        <a href="/api/apps/${app.id}/download" class="btn btn-primary" download>Download</a>
+        <a href="${API_BASE}/api/apps/${app.id}/download" class="btn btn-primary" onclick="trackDownload('${app.id}')">Download</a>
       </div>
     `).join('');
 
@@ -72,7 +82,7 @@ if (newsletterForm) {
     const email = e.target.querySelector('input[type="email"]').value;
     
     try {
-      await fetch('/api/newsletter/subscribe', {
+      await fetch(`${API_BASE}/api/newsletter/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -94,7 +104,7 @@ if (contactForm) {
     const formData = new FormData(e.target);
     
     try {
-      await fetch('/api/contact', {
+      await fetch(`${API_BASE}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.fromEntries(formData))
@@ -251,7 +261,7 @@ function evaluateInvestor(session) {
 
 async function submitInvestorApplication(session, evaluation) {
   try {
-    await fetch('/api/investor-applications', {
+    await fetch(`${API_BASE}/api/investor-applications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
