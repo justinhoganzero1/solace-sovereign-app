@@ -3,7 +3,7 @@
  * Owner vs User separation with strict security controls
  */
 
-export const OWNER_EMAIL = 'justinhoganzero1@gmail.com'; // Owner's email - CHANGE THIS
+export const OWNER_EMAIL = 'justinbretthogan@gmail.com'; // Owner's email
 
 export const USER_ROLES = {
   OWNER: 'owner',
