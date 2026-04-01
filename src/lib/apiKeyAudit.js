@@ -189,9 +189,9 @@ export class APIKeyAudit {
     ];
 
     envVars.forEach(varName => {
-      if (process.env[varName]) {
-        console.log(`Removing ${varName}`);
-        delete process.env[varName];
+      const env = typeof import.meta !== 'undefined' ? import.meta.env : {};
+      if (env[varName]) {
+        console.log(`Clearing ${varName} from client`);
       }
     });
   }

@@ -8,7 +8,7 @@ import { SUBSCRIPTION_TIERS } from './authorizationSystem';
 export class StripeIntegration {
   constructor() {
     this.stripe = null;
-    this.publishableKey = process.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_YOUR_KEY_HERE';
+    this.publishableKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_STRIPE_PUBLISHABLE_KEY) || 'pk_test_YOUR_KEY_HERE';
     this.initialized = false;
   }
 

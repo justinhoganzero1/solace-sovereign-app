@@ -160,7 +160,7 @@ export class BoltOnPaymentRouter {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.VITE_SOLACE_API_KEY}`
+          'Authorization': `Bearer ${import.meta.env?.VITE_SOLACE_API_KEY || ''}`
         },
         body: JSON.stringify({
           amount,
