@@ -18,37 +18,21 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth } = useAuth();
 
-  // Force render app after 2 seconds even if still loading
-  const [forceRender, setForceRender] = React.useState(false);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setForceRender(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading spinner while checking app public settings or auth (max 2 seconds)
-  if ((isLoadingPublicSettings || isLoadingAuth) && !forceRender) {
+  // Show loading spinner while loading user
+  if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Loading SOLACE...</p>
+          <div className="w-8 h-8 border-4 border-amber-200 border-t-amber-800 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-amber-300 text-lg">Loading SOLACE...</p>
         </div>
       </div>
     );
   }
 
-  // Handle authentication errors - but still render app
-  if (authError && !forceRender) {
-    console.warn('Auth error:', authError);
-    // Don't block - just log and continue
-  }
-
-  // Always render the main app
+  // Render the main app
   return (
     <Routes>
       <Route path="/" element={
