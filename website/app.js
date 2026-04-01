@@ -13,35 +13,92 @@ function trackDownload(appId) {
   }).catch(err => console.error('Failed to track download:', err));
 }
 
+// Store all apps globally for filtering
+let allApps = [];
+
 // Load published apps
 async function loadPublishedApps() {
   try {
     const response = await fetch(`${API_BASE}/api/published-apps`);
     const apps = await response.json();
+    allApps = apps;
 
+    displayApps(apps);
+  } catch (error) {
+    console.error('Error loading apps:', error);
     const appsContainer = document.getElementById('apps-list');
-    
-    if (!apps || apps.length === 0) {
-      appsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No apps available yet. Check back soon!</p>';
-      return;
+    if (appsContainer) {
+      appsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Loading apps...</p>';
     }
+  }
+}
 
-    appsContainer.innerHTML = apps.map(app => `
-      <div class="app-card">
-        <img src="${app.icon || '/default-app-icon.png'}" alt="${app.name}" class="app-icon">
+// Display apps in the grid
+function displayApps(apps) {
+  const appsContainer = document.getElementById('apps-list');
+  
+  if (!apps || apps.length === 0) {
+    appsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No apps available yet. Check back soon!</p>';
+    return;
+  }
+
+  appsContainer.innerHTML = apps.map(app => {
+    const downloadUrl = getAppDownloadUrl(app.id);
+    const featuredClass = app.featured ? 'featured' : '';
+    
+    return `
+      <div class="app-card ${featuredClass}">
+        <div class="app-icon">${getAppIcon(app.id)}</div>
+        <div class="app-category">${app.category || 'App'}</div>
         <h3>${app.name}</h3>
         <p>${app.description}</p>
         <div class="app-stats">
-          <span>⬇️ ${app.downloads || 0} downloads</span>
+          <span>⬇️ ${app.downloads?.toLocaleString() || 0}</span>
           <span>⭐ ${app.rating || 'New'}</span>
+          <span>📦 ${app.size || 'N/A'}</span>
         </div>
-        <a href="${API_BASE}/api/apps/${app.id}/download" class="btn btn-primary" onclick="trackDownload('${app.id}')">Download</a>
+        <a href="${downloadUrl}" class="btn btn-primary" onclick="trackDownload('${app.id}')" ${app.id.includes('juzzy') ? 'target="_blank"' : ''}>Download Now</a>
       </div>
-    `).join('');
+    `;
+  }).join('');
+}
 
-  } catch (error) {
-    console.error('Error loading apps:', error);
+// Get app-specific download URL
+function getAppDownloadUrl(appId) {
+  if (appId === 'juzzy-crypto') {
+    // Link to Juzzy app in workspace
+    return 'file:///c:/Users/User/.windsurf/worktrees/2048-2/2048-2-0dc9db83/index.html';
+  } else if (appId === 'solace-main') {
+    // Link to SOLACE app
+    return '../index.html';
+  } else {
+    // Other apps use API download
+    return `${API_BASE}/api/apps/${appId}/download`;
   }
+}
+
+// Get app icon emoji
+function getAppIcon(appId) {
+  const icons = {
+    'solace-main': '🌟',
+    'juzzy-crypto': '💎',
+    'voice-simulator': '🎤',
+    'movie-maker': '🎬'
+  };
+  return icons[appId] || '📱';
+}
+
+// Filter apps by category
+function filterApps(category) {
+  if (category === 'all') {
+    displayApps(allApps);
+  } else {
+    const filtered = allApps.filter(app => app.category === category);
+    displayApps(filtered);
+  }
+  
+  // Scroll to apps section
+  document.getElementById('apps').scrollIntoView({ behavior: 'smooth' });
 }
 
 // Track downloads

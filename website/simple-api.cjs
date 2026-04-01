@@ -8,7 +8,7 @@ const path = require('path');
 
 const PORT = 3000;
 
-// Mock published apps data
+// Published apps from JuzziesAppDesignsOz
 const publishedApps = [
   {
     id: 'solace-main',
@@ -18,7 +18,21 @@ const publishedApps = [
     downloads: 15420,
     rating: '4.9',
     version: '1.0.0',
-    size: '45 MB'
+    size: '45 MB',
+    category: 'AI Platform',
+    featured: true
+  },
+  {
+    id: 'juzzy-crypto',
+    name: 'Juzzy - Crypto Education',
+    description: 'Comprehensive crypto education platform with 100+ interactive modules, AI tutoring, and personalized learning paths.',
+    icon: '/icons/juzzy-icon.png',
+    downloads: 12350,
+    rating: '4.9',
+    version: '1.0.0',
+    size: '28 MB',
+    category: 'Education',
+    featured: true
   },
   {
     id: 'voice-simulator',
@@ -28,7 +42,9 @@ const publishedApps = [
     downloads: 8234,
     rating: '4.8',
     version: '1.0.0',
-    size: '12 MB'
+    size: '12 MB',
+    category: 'AI Tools',
+    featured: false
   },
   {
     id: 'movie-maker',
@@ -38,7 +54,9 @@ const publishedApps = [
     downloads: 6891,
     rating: '4.7',
     version: '1.0.0',
-    size: '38 MB'
+    size: '38 MB',
+    category: 'AI Tools',
+    featured: false
   }
 ];
 
