@@ -41,6 +41,11 @@ const setStorage = (key, value) => {
 
 // Initialize default profile if not exists
 const initializeStorage = () => {
+  // Only run in browser environment
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+    return;
+  }
+  
   if (!getStorage(STORAGE_KEYS.USER)) {
     setStorage(STORAGE_KEYS.USER, LOCAL_OWNER);
   }
@@ -58,8 +63,10 @@ const initializeStorage = () => {
   }
 };
 
-// Initialize on load
-initializeStorage();
+// Initialize on load (only in browser)
+if (typeof window !== 'undefined') {
+  initializeStorage();
+}
 
 // User Profile Entity
 const UserProfileEntity = {
