@@ -41,6 +41,7 @@ const ICONS = {
   builder:    'M2 20h20 M4 20V10l8-6 8 6v10 M9 20v-6h6v6',
   mechanic:   'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z',
   interpreter:'M12 22a10 10 0 100-20 10 10 0 000 20z M2 12h20 M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z',
+  appmaker:   'M13 2L3 14h9l-1 8 10-12h-9l1-8z',
   inventor:   'M9 18h6 M10 22h4 M12 2v1 M4.22 7.22l.71.71 M1 14h1 M22 14h1 M19.07 7.93l.71-.71 M12 6a6 6 0 016 6c0 2.22-1.21 4.16-3 5.2V18a1 1 0 01-1 1h-4a1 1 0 01-1-1v-.8A6 6 0 0112 6z',
   handyman:   'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z',
   mind:       'M12 2a8 8 0 018 8c0 6-8 12-8 12S4 16 4 10a8 8 0 018-8z M12 10m-3 0a3 3 0 116 0 3 3 0 01-6 0',
@@ -67,6 +68,7 @@ const neonColors = [
 ]
 
 const specialists = [
+  { name: 'App Maker', icon: 'appmaker', desc: 'Build production-ready apps with AI', ci: 4, page: 'Inventor' },
   { name: 'Wellness Center', icon: 'wellness', desc: 'Health & wellness guidance', ci: 0 },
   { name: 'Video Editor', icon: 'video', desc: 'AI video editing tools', ci: 1 },
   { name: 'Oracle Council', icon: 'oracle', desc: 'Strategic AI advisors', ci: 0 },
@@ -74,7 +76,6 @@ const specialists = [
   { name: 'Builder', icon: 'builder', desc: 'Construction & project planning', ci: 2 },
   { name: 'Mechanic', icon: 'mechanic', desc: 'Vehicle & machinery repair', ci: 5 },
   { name: 'Interpreter', icon: 'interpreter', desc: '200+ language translation', ci: 2 },
-  { name: 'Inventor', icon: 'inventor', desc: 'App & product creation', ci: 4 },
   { name: 'Handyman', icon: 'handyman', desc: 'Home repair guidance', ci: 4 },
   { name: 'Mind Hub', icon: 'mind', desc: 'Mental health support', ci: 0 },
   { name: 'Safety Center', icon: 'safety', desc: 'Personal safety tools', ci: 6 },
@@ -491,7 +492,7 @@ function OwnerDashboard() {
             return (
               <div key={s.name} className="neon-bubble"
                 style={{ animationDelay: `${i * 0.04}s`, '--neon-glow': nc.glow }}
-                onClick={() => navigateTo(s.name.replace(/\s+/g, ''))}
+                onClick={() => navigateTo(s.page || s.name.replace(/\s+/g, ''))}
               >
                 <style>{`.neon-bubble:nth-child(${i+1})::after { background: ${nc.glow}; }`}</style>
                 <div className="icon-orb" style={{ background: nc.bg, border: `1px solid ${nc.glow}22` }}>

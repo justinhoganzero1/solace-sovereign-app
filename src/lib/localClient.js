@@ -68,52 +68,78 @@ if (typeof window !== 'undefined') {
   initializeStorage();
 }
 
-// User Profile Entity
-const UserProfileEntity = {
-  async list() {
-    return getStorage(STORAGE_KEYS.PROFILES, []);
-  },
-  
-  async filter(query = {}) {
-    const profiles = getStorage(STORAGE_KEYS.PROFILES, []);
-    return profiles.filter((profile) =>
-      Object.entries(query).every(([key, value]) => profile[key] === value)
-    );
-  },
-  
-  async create(payload = {}) {
-    const profiles = getStorage(STORAGE_KEYS.PROFILES, []);
-    const record = {
-      id: `profile_${Date.now()}`,
-      created_by: LOCAL_OWNER.email,
-      email: payload.email || LOCAL_OWNER.email,
-      full_name: payload.full_name || LOCAL_OWNER.name,
-      tier: payload.tier || 'user',
-      subscription_tier: payload.subscription_tier || 'free',
-      created_at: new Date().toISOString(),
-      ...payload
-    };
-    profiles.push(record);
-    setStorage(STORAGE_KEYS.PROFILES, profiles);
-    return record;
-  },
-  
-  async update(id, updates = {}) {
-    const profiles = getStorage(STORAGE_KEYS.PROFILES, []);
-    const updatedProfiles = profiles.map((profile) =>
-      profile.id === id ? { ...profile, ...updates, updated_at: new Date().toISOString() } : profile
-    );
-    setStorage(STORAGE_KEYS.PROFILES, updatedProfiles);
-    return updatedProfiles.find((profile) => profile.id === id) || null;
-  },
-  
-  async delete(id) {
-    const profiles = getStorage(STORAGE_KEYS.PROFILES, []);
-    const filtered = profiles.filter((profile) => profile.id !== id);
-    setStorage(STORAGE_KEYS.PROFILES, filtered);
-    return { success: true };
+// Generic entity factory — creates full CRUD for ANY entity type
+function createEntity(entityName) {
+  const storageKey = `solace_entity_${entityName}`;
+  return {
+    async list() {
+      return getStorage(storageKey, []);
+    },
+    async get(id) {
+      const items = getStorage(storageKey, []);
+      return items.find(i => i.id === id) || null;
+    },
+    async filter(query = {}) {
+      const items = getStorage(storageKey, []);
+      if (!query || Object.keys(query).length === 0) return items;
+      return items.filter(item =>
+        Object.entries(query).every(([key, value]) => item[key] === value)
+      );
+    },
+    async create(payload = {}) {
+      const items = getStorage(storageKey, []);
+      const record = {
+        id: `${entityName.toLowerCase()}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        created_by: LOCAL_OWNER.email,
+        created_at: new Date().toISOString(),
+        ...payload
+      };
+      items.push(record);
+      setStorage(storageKey, items);
+      return record;
+    },
+    async update(id, updates = {}) {
+      const items = getStorage(storageKey, []);
+      const updated = items.map(item =>
+        item.id === id ? { ...item, ...updates, updated_at: new Date().toISOString() } : item
+      );
+      setStorage(storageKey, updated);
+      return updated.find(i => i.id === id) || null;
+    },
+    async delete(id) {
+      const items = getStorage(storageKey, []);
+      setStorage(storageKey, items.filter(i => i.id !== id));
+      return { success: true };
+    }
+  };
+}
+
+// Entities Proxy — auto-creates any entity on first access
+const entitiesProxy = new Proxy({}, {
+  get(target, entityName) {
+    if (!target[entityName]) {
+      target[entityName] = createEntity(entityName);
+    }
+    return target[entityName];
   }
-};
+});
+
+// Seed default UserProfile if missing
+if (typeof window !== 'undefined') {
+  const profiles = getStorage('solace_entity_UserProfile', []);
+  if (profiles.length === 0) {
+    setStorage('solace_entity_UserProfile', [{
+      id: 'profile_owner_123',
+      created_by: LOCAL_OWNER.email,
+      email: LOCAL_OWNER.email,
+      full_name: LOCAL_OWNER.name,
+      tier: 'owner',
+      subscription_tier: 'owner',
+      oracle_gender: 'female',
+      created_at: new Date().toISOString()
+    }]);
+  }
+}
 
 // Local client that mimics Base44 API
 export const localClient = {
@@ -123,34 +149,38 @@ export const localClient = {
     },
     
     logout(redirectUrl) {
-      // Clear user session but keep profiles
       setStorage(STORAGE_KEYS.USER, null);
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
+      if (redirectUrl) window.location.href = redirectUrl;
     },
     
     redirectToLogin(redirectUrl) {
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
+      if (redirectUrl) window.location.href = redirectUrl;
     },
     
     async login(email, password) {
-      // Simple mock login - always succeeds with owner
       setStorage(STORAGE_KEYS.USER, LOCAL_OWNER);
       return LOCAL_OWNER;
     }
   },
   
-  entities: {
-    UserProfile: UserProfileEntity
-  },
+  entities: entitiesProxy,
   
   appLogs: {
     async logUserInApp(pageName) {
       console.debug('Navigation:', pageName);
       return { success: true };
+    }
+  },
+
+  // Functions stubs — pages call base44.functions.call / invoke
+  functions: {
+    async call(functionName, params = {}) {
+      console.warn(`[SOLACE] functions.call('${functionName}') — no backend. Returning empty.`);
+      return { data: {} };
+    },
+    async invoke(functionName, params = {}) {
+      console.warn(`[SOLACE] functions.invoke('${functionName}') — no backend. Returning empty.`);
+      return { data: {} };
     }
   },
   
