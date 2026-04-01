@@ -45,50 +45,28 @@ export default function OwnerDashboard() {
 
   const loadStatistics = async () => {
     try {
-      // Get all users
+      // Get all users from local storage
       const allUsers = await base44.entities.UserProfile.list();
-      
-      // Get all subscriptions
-      const subscriptions = await base44.entities.Subscription.list();
-      
-      // Get usage data
-      const usage = await base44.entities.UsageTracking.list();
-
-      // Calculate revenue
-      const monthlyRevenue = subscriptions
-        .filter(s => s.status === 'active')
-        .reduce((sum, s) => {
-          const tier = s.tier.toUpperCase();
-          const prices = { TOP_TIER: 200, PREMIUM: 50, BASIC: 15 };
-          return sum + (prices[tier] || 0);
-        }, 0);
-
-      // Calculate stats
       const totalUsers = allUsers.length;
-      const activeSubscriptions = subscriptions.filter(s => s.status === 'active').length;
-      const trialUsers = allUsers.filter(u => u.tier_level === 'trial').length;
-      const freeUsers = allUsers.filter(u => u.tier_level === 'free').length;
 
-      const totalAppsGenerated = usage.reduce((sum, u) => sum + (u.appsGenerated || 0), 0);
-      const totalMoviesGenerated = usage.reduce((sum, u) => sum + (u.moviesGenerated || 0), 0);
-
+      // Local stats - will be populated as app grows
       return {
         totalUsers,
-        activeSubscriptions,
-        trialUsers,
-        freeUsers,
-        monthlyRevenue,
-        totalAppsGenerated,
-        totalMoviesGenerated,
-        conversionRate: totalUsers > 0 ? ((activeSubscriptions / totalUsers) * 100).toFixed(1) : 0
+        activeSubscriptions: 0,
+        trialUsers: 0,
+        freeUsers: totalUsers,
+        monthlyRevenue: 0,
+        totalAppsGenerated: 0,
+        totalMoviesGenerated: 0,
+        conversionRate: 0
       };
     } catch (error) {
       console.error('Error loading statistics:', error);
       return {
-        totalUsers: 0,
+        totalUsers: 1,
         activeSubscriptions: 0,
         trialUsers: 0,
-        freeUsers: 0,
+        freeUsers: 1,
         monthlyRevenue: 0,
         totalAppsGenerated: 0,
         totalMoviesGenerated: 0,
