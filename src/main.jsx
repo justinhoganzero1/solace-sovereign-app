@@ -1,5 +1,30 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { BrowserRouter, useNavigate } from 'react-router-dom'
+
+class PageErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, info) { console.error('Page error:', error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px', textAlign: 'center', color: '#f87171' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '16px' }}>⚠️</div>
+          <p style={{ marginBottom: '12px' }}>This page encountered an error.</p>
+          <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '0.8rem', textAlign: 'left', maxWidth: '600px', margin: '0 auto', whiteSpace: 'pre-wrap', color: '#fca5a5' }}>
+            {this.state.error?.toString()}
+          </pre>
+          <button onClick={() => { this.setState({ hasError: false, error: null }); if (this.props.onBack) this.props.onBack(); }}
+            style={{ marginTop: '16px', padding: '10px 24px', background: 'rgba(139,92,246,0.2)', border: '1px solid rgba(139,92,246,0.4)', borderRadius: '8px', color: '#c4b5fd', cursor: 'pointer' }}>
+            ← Back to Dashboard
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Inline styles - no external CSS dependency
 const styles = {
@@ -84,18 +109,22 @@ function OwnerDashboard() {
   // Render loaded page
   if (activePage && PageComponent && !loadingPage) {
     return (
-      <div style={styles.app}>
-        <div style={styles.header}>
-          <div style={{ ...styles.logo, cursor: 'pointer' }} onClick={goHome}>SOLACE</div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <span style={{ color: '#a3a3a3', fontSize: '0.85rem' }}>{activePage}</span>
-            <button onClick={goHome} style={{ ...styles.navBtn, padding: '8px 16px', fontSize: '0.8rem' }}>← Dashboard</button>
+      <BrowserRouter>
+        <div style={styles.app}>
+          <div style={styles.header}>
+            <div style={{ ...styles.logo, cursor: 'pointer' }} onClick={goHome}>SOLACE</div>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <span style={{ color: '#a3a3a3', fontSize: '0.85rem' }}>{activePage}</span>
+              <button onClick={goHome} style={{ ...styles.navBtn, padding: '8px 16px', fontSize: '0.8rem' }}>← Dashboard</button>
+            </div>
           </div>
+          <PageErrorBoundary onBack={goHome}>
+            <React.Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#a855f7' }}>Loading...</div>}>
+              <PageComponent />
+            </React.Suspense>
+          </PageErrorBoundary>
         </div>
-        <React.Suspense fallback={<div style={{ padding: '40px', textAlign: 'center', color: '#a855f7' }}>Loading...</div>}>
-          <PageComponent />
-        </React.Suspense>
-      </div>
+      </BrowserRouter>
     )
   }
 
