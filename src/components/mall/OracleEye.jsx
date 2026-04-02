@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Eye, Mic, Send } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 

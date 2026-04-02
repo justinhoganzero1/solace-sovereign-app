@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Volume2, VolumeX, Play, Pause, Loader2 } from 'lucide-react';
+import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function VoicePlayer({ audioUrl, autoPlay = false, className = '' }) {

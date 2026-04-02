@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, ThumbsUp, ThumbsDown, Plus, Users, MessageSquare, TrendingUp } from 'lucide-react';
+import { ArrowLeft, ThumbsUp, ThumbsDown, Plus, Users, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -103,7 +103,7 @@ export default function OracleCouncil() {
       
       await loadData();
       toast.success('Vote recorded');
-    } catch (error) {
+    } catch {
       toast.error('Failed to vote');
     }
   };
@@ -131,7 +131,7 @@ export default function OracleCouncil() {
         if (!modResult.data.is_safe) {
           toast.warning('Post flagged for review by AI moderator');
         }
-      } catch (error) {
+      } catch {
         console.log('Moderation check failed, post still created');
       }
       
@@ -159,7 +159,7 @@ export default function OracleCouncil() {
       setShowCreatePost(false);
       setNewPost({ title: '', content: '', category: 'ideas', tags: '' });
       loadData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to create post');
     }
   };

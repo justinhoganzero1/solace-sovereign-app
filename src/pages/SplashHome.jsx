@@ -2,8 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, MessageSquare } from 'lucide-react';
+import { Sparkles, MessageSquare } from 'lucide-react';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
 
 export default function SplashHome() {

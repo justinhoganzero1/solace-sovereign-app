@@ -7,14 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Save, User, Volume2, Globe, Play } from 'lucide-react';
+import { ArrowLeft, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import VoiceSelectorComponent from '../components/voice/VoiceSelectorComponent';
-import { Slider } from '@/components/ui/slider';
 import { multilingualVoices } from '../lib/multilingualVoices';
-import { Input } from '@/components/ui/input';
 
 
 export default function Settings() {
@@ -22,12 +20,12 @@ export default function Settings() {
   const [profile, setProfile] = useState(null);
   const [voiceSettings, setVoiceSettings] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [selectedVoice, setSelectedVoice] = useState(null);
-  const [voiceSearch, setVoiceSearch] = useState('');
-  const [availableLanguages, setAvailableLanguages] = useState([]);
-  const [filteredVoices, setFilteredVoices] = useState([]);
+  const [_saving, setSaving] = useState(false);
+  const [selectedLanguage, _setSelectedLanguage] = useState('en');
+  const [_selectedVoice, _setSelectedVoice] = useState(null);
+  const [voiceSearch, _setVoiceSearch] = useState('');
+  const [_availableLanguages, setAvailableLanguages] = useState([]);
+  const [_filteredVoices, setFilteredVoices] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -88,7 +86,7 @@ export default function Settings() {
       const updated = await base44.entities.UserProfile.update(profile.id, updates);
       setProfile(updated);
       toast.success('Settings saved successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -101,7 +99,7 @@ export default function Settings() {
       const updated = await base44.entities.VoiceSettings.update(voiceSettings.id, updates);
       setVoiceSettings(updated);
       toast.success('Voice settings saved');
-    } catch (error) {
+    } catch {
       toast.error('Failed to save voice settings');
     } finally {
       setSaving(false);

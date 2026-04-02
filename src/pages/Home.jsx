@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { createPageUrl } from '../utils';
 import { Sparkles, MessageSquare, Zap, Languages, Settings, Shield, Trophy, Users, LogOut, GripHorizontal, BrainCircuit } from 'lucide-react';
-import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [_user, setUser] = useState(null);
+  const [_profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [widgets, setWidgets] = useState([
     { label: 'Chat Oracle', page: 'Chat', icon: MessageSquare, color: 'yellow', isMain: true, appFace: 'oracle' },
@@ -122,7 +121,7 @@ export default function Home() {
         <div className="w-full max-w-6xl px-4">
           <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="widgets" direction="horizontal" type="WIDGET">
-              {(provided, snapshot) => (
+              {(provided, _snapshot) => (
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
@@ -134,7 +133,7 @@ export default function Home() {
 
                     return (
                       <Draggable key={widget.page} draggableId={widget.page} index={idx}>
-                        {(provided, snapshot) => (
+                        {(provided, _snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.draggableProps}

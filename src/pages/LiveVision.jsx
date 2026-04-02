@@ -9,8 +9,8 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
 export default function LiveVision() {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const [_user, setUser] = useState(null);
+  const [_profile, setProfile] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [response, setResponse] = useState(null);

@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, Users, DollarSign, TrendingUp, Settings, Shield, Database, Key, Zap } from 'lucide-react';
+import { ArrowLeft, Users, DollarSign, TrendingUp, Settings, Shield, Database, Zap } from 'lucide-react';
 import { authSystem, OWNER_EMAIL } from '../lib/authorizationSystem';
 import { motion } from 'framer-motion';
 
 export default function OwnerDashboard() {
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [unauthorized, setUnauthorized] = useState(false);

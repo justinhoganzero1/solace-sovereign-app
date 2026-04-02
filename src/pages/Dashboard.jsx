@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import OracleBackground from '../components/OracleBackground';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { createPageUrl } from '../utils';
 import { 
   MessageSquare, Languages, Shield, Brain, Heart, Briefcase, 
-  BookOpen, Music, Film, Palette, Code, Coffee, Sparkles,
-  GraduationCap, Dumbbell, Utensils, Plane, Home, ShoppingBag,
-  Activity, TrendingUp, Users, Settings
+  BookOpen, Music, Film, Palette, Code, Sparkles,
+  GraduationCap, Dumbbell, Utensils, Plane, Home, TrendingUp, Users
 } from 'lucide-react';
 
 export default function Dashboard() {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function BrowserVoice({ text, onEnd, autoPlay = false, gender = 'female' }) {
   const [speaking, setSpeaking] = useState(false);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, Brain, Smile, BookOpen, MessageSquare, Sparkles } from 'lucide-react';
+import { ArrowLeft, Brain, Smile, BookOpen, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { FuturisticOrb } from '../components/ui/futuristic-cloud';
 
 export default function OracleTrainingCenter() {
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [training, setTraining] = useState([]);
   const [personas, setPersonas] = useState([]);
   const [memories, setMemories] = useState([]);
@@ -62,7 +62,7 @@ export default function OracleTrainingCenter() {
       toast.success('Training data added!');
       setNewTraining({ type: 'communication_style', data: '' });
       loadData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to add training');
     }
   };
@@ -80,7 +80,7 @@ export default function OracleTrainingCenter() {
       toast.success('Persona created!');
       setNewPersona({ name: '', mood: 'casual', formality: 5, verbosity: 'balanced', traits: '' });
       loadData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to create persona');
     }
   };
@@ -95,7 +95,7 @@ export default function OracleTrainingCenter() {
       await base44.entities.OraclePersona.update(personaId, { is_active: true });
       toast.success('Persona activated!');
       loadData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to activate');
     }
   };

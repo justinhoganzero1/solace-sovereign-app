@@ -15,7 +15,7 @@ import { detectDeviceCapabilities } from '../lib/deviceCapabilities';
 import { buildSpecialistSystemPrompt, getSpecialistProfile } from '../lib/specialistCapabilities';
 
 export default function SpecialistChat() {
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');

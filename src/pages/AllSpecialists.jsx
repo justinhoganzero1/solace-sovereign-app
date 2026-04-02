@@ -5,7 +5,7 @@ import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, Search, Briefcase } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { allSpecialists } from '../components/data/specialists';
 import { motion } from 'framer-motion';
 

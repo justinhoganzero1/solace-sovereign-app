@@ -3,16 +3,14 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { createPageUrl } from '../utils';
-import { Camera, Upload, ArrowLeft, Zap, X, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Upload, ArrowLeft, Zap, X, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
-import ReactMarkdown from 'react-markdown';
 
 export default function PointAndShoot() {
-  const [user, setUser] = useState(null);
+  const [_user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [mode, setMode] = useState('capture'); // 'capture' or 'instructions'
   const [images, setImages] = useState([]);

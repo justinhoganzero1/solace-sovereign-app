@@ -5,8 +5,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { investorScreeningAI } from '../lib/investorScreeningAI';
-import { authSystem } from '../lib/authorizationSystem';
 import gitStorage from '../lib/gitStorage';
 
 export default function InvestorPortal() {

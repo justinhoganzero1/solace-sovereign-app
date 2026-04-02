@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 export default function TierSystem() {
   const [subscription, setSubscription] = useState(null);
   const [trialStatus, setTrialStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkStatus();
@@ -41,7 +41,7 @@ export default function TierSystem() {
       });
       toast.success(data.message);
       checkStatus();
-    } catch (error) {
+    } catch {
       toast.error('Upgrade failed');
     }
   };

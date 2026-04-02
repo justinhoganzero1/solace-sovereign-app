@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedOracle from '../oracle/AnimatedOracle';
 

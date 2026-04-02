@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, Trophy, Star, Target, TrendingUp, Award, Zap, Users } from 'lucide-react';
+import { ArrowLeft, Trophy, Star, Target, Award, Zap, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { FuturisticOrb } from '../components/ui/futuristic-cloud';
 

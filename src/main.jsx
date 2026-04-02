@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useNavigate } from 'react-router-dom'
+import FloatingOracleOrb from './components/FloatingOracleOrb'
 
 class PageErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -405,6 +406,7 @@ function OwnerDashboard() {
               <PageComponent />
             </React.Suspense>
           </PageErrorBoundary>
+          <FloatingOracleOrb onNavigate={navigateTo} onGoHome={goHome} />
         </div>
       </BrowserRouter>
     )
@@ -437,7 +439,8 @@ function OwnerDashboard() {
     )
   }
 
-  // Main dashboard
+  // Main dashboard - Oracle-centric
+  const [showFullMenu, setShowFullMenu] = React.useState(false)
   const stats = [
     { num: '20', label: 'AI Specialists', color: '#a855f7' },
     { num: '45', label: 'Total Pages', color: '#ec4899' },
@@ -446,84 +449,105 @@ function OwnerDashboard() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#06060f', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#06060f', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif", position: 'relative' }}>
       {/* Background radials */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, rgba(236,72,153,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(59,130,246,0.03) 0%, transparent 40%)'
       }} />
 
-      {/* Header */}
-      <div style={{ ...headerStyle, position: 'relative', zIndex: 10 }}>
+      {/* Minimal Header */}
+      <div style={{ ...headerStyle, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, background: 'rgba(6,6,15,0.8)', backdropFilter: 'blur(20px)' }}>
         <div style={logoStyle}>SOLACE</div>
-        <div style={{
-          background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)',
-          borderRadius: '24px', padding: '6px 18px', fontSize: '0.78rem', color: '#a78bfa',
-          fontWeight: 500, letterSpacing: '0.03em',
-        }}>
-          Owner: Justin Brett Hogan
-        </div>
+        <button 
+          onClick={() => setShowFullMenu(!showFullMenu)}
+          style={{
+            background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
+            borderRadius: '12px', padding: '8px 20px', fontSize: '0.85rem', color: '#c4b5fd',
+            fontWeight: 600, letterSpacing: '0.02em', cursor: 'pointer', transition: 'all 0.3s'
+          }}
+        >
+          {showFullMenu ? 'Hide Menu' : 'Show All Features'}
+        </button>
       </div>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', position: 'relative', zIndex: 5 }}>
+      {/* Full Menu Overlay - Only shows when toggled */}
+      {showFullMenu && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(6,6,15,0.95)', backdropFilter: 'blur(30px)', overflowY: 'auto', paddingTop: '80px' }}>
+          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+            <button 
+              onClick={() => setShowFullMenu(false)}
+              style={{
+                position: 'fixed', top: '20px', right: '20px', background: 'rgba(244,63,94,0.2)', border: '1px solid rgba(244,63,94,0.4)',
+                borderRadius: '12px', padding: '10px 24px', fontSize: '0.9rem', color: '#fca5a5',
+                fontWeight: 600, cursor: 'pointer', zIndex: 101
+              }}
+            >
+              Close Menu
+            </button>
 
-        {/* Stats Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '48px' }}>
-          {stats.map((s) => (
-            <div key={s.label} className="stat-orb" style={{ '--stat-color': s.color }}>
-              <div style={{ fontSize: '2.2rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.num}</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Specialists */}
-        <div style={{ marginBottom: '8px' }}>
-          <h2 style={{
-            fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
-            background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>AI Specialists</h2>
-          <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Your sovereign AI team — tap any bubble to launch</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginTop: '20px' }}>
-          {specialists.map((s, i) => {
-            const nc = neonColors[s.ci]
-            return (
-              <div key={s.name} className="neon-bubble"
-                style={{ animationDelay: `${i * 0.04}s`, '--neon-glow': nc.glow }}
-                onClick={() => navigateTo(s.page || s.name.replace(/\s+/g, ''))}
-              >
-                <style>{`.neon-bubble:nth-child(${i+1})::after { background: ${nc.glow}; }`}</style>
-                <div className="icon-orb" style={{ background: nc.bg, border: `1px solid ${nc.glow}22` }}>
-                  <style>{`.neon-bubble:nth-child(${i+1}) .icon-orb::after { border: 1px solid ${nc.glow}33; }`}</style>
-                  <Icon path={ICONS[s.icon]} color={nc.glow} size={26} />
+            {/* Stats Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '48px' }}>
+              {stats.map((s) => (
+                <div key={s.label} className="stat-orb" style={{ '--stat-color': s.color }}>
+                  <div style={{ fontSize: '2.2rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.num}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{s.label}</div>
                 </div>
-                <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#e2e8f0', marginBottom: '4px', letterSpacing: '-0.01em' }}>{s.name}</div>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>{s.desc}</div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* All Pages */}
-        <div style={{ marginTop: '56px', marginBottom: '8px' }}>
-          <h2 style={{
-            fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
-            background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>All Pages</h2>
-          <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Navigate to any section of the app</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginTop: '16px', paddingBottom: '60px' }}>
-          {ownerPages.map((page) => (
-            <div key={page} className="page-pill" onClick={() => navigateTo(page)}>
-              {page.replace(/([A-Z])/g, ' $1').trim()}
+              ))}
             </div>
-          ))}
+
+            {/* Specialists */}
+            <div style={{ marginBottom: '8px' }}>
+              <h2 style={{
+                fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
+                background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>AI Specialists</h2>
+              <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Your sovereign AI team — tap any bubble to launch</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginTop: '20px' }}>
+              {specialists.map((s, i) => {
+                const nc = neonColors[s.ci]
+                return (
+                  <div key={s.name} className="neon-bubble"
+                    style={{ animationDelay: `${i * 0.04}s`, '--neon-glow': nc.glow }}
+                    onClick={() => { setShowFullMenu(false); navigateTo(s.page || s.name.replace(/\s+/g, '')); }}
+                  >
+                    <style>{`.neon-bubble:nth-child(${i+1})::after { background: ${nc.glow}; }`}</style>
+                    <div className="icon-orb" style={{ background: nc.bg, border: `1px solid ${nc.glow}22` }}>
+                      <style>{`.neon-bubble:nth-child(${i+1}) .icon-orb::after { border: 1px solid ${nc.glow}33; }`}</style>
+                      <Icon path={ICONS[s.icon]} color={nc.glow} size={26} />
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#e2e8f0', marginBottom: '4px', letterSpacing: '-0.01em' }}>{s.name}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>{s.desc}</div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* All Pages */}
+            <div style={{ marginTop: '56px', marginBottom: '8px' }}>
+              <h2 style={{
+                fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
+                background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              }}>All Pages</h2>
+              <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Navigate to any section of the app</p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginTop: '16px', paddingBottom: '60px' }}>
+              {ownerPages.map((page) => (
+                <div key={page} className="page-pill" onClick={() => { setShowFullMenu(false); navigateTo(page); }}>
+                  {page.replace(/([A-Z])/g, ' $1').trim()}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ORACLE IS THE MAIN INTERFACE */}
+      <FloatingOracleOrb onNavigate={navigateTo} onGoHome={goHome} />
     </div>
   )
 }

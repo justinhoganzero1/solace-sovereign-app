@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import VideoToolSelector from '../components/video/VideoToolSelector.jsx';
 import VideoStyleTransfer from '../components/video/VideoStyleTransfer.jsx';
 import AIASMRGenerator from '../components/video/AIASMRGenerator.jsx';
@@ -20,7 +20,7 @@ import AIVectorGenerator from '../components/video/AIVectorGenerator.jsx';
 import VideoEditingTools from '../components/video/VideoEditingTools.jsx';
 
 export default function VideoEditor() {
-  const [profile, setProfile] = useState(null);
+  const [_profile, setProfile] = useState(null);
   const [selectedTool, setSelectedTool] = useState(null);
   const [generatedMedia, setGeneratedMedia] = useState(null);
   const [loading, setLoading] = useState(false);

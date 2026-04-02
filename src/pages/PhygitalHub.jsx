@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 export default function PhygitalHub() {
-  const [hapticActive, setHapticActive] = useState(false);
+  const [_hapticActive, setHapticActive] = useState(false);
   const [safeMeeting, setSafeMeeting] = useState(null);
   const [isScanningBio, setIsScanningBio] = useState(false);
   const [isScanningCrowd, setIsScanningCrowd] = useState(false);
@@ -39,7 +39,7 @@ export default function PhygitalHub() {
 
         toast.success(`Oracle guides you: ${data.direction}. No screen needed.`);
       });
-    } catch (error) {
+    } catch {
       toast.error('Haptic guide failed');
     }
   };
@@ -59,7 +59,7 @@ export default function PhygitalHub() {
         setSafeMeeting(data.meeting);
         toast.success('Meeting GPS held in escrow. Oracle monitoring.');
       });
-    } catch (error) {
+    } catch {
       toast.error('Safe meeting creation failed');
     }
   };

@@ -15,7 +15,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [interests, setInterests] = useState([]);
-  const [quests, setQuests] = useState([]);
+  const [_quests, _setQuests] = useState([]);
   const [profile, setProfile] = useState(null);
 
   const interestOptions = [
@@ -121,7 +121,7 @@ export default function Onboarding() {
       
       toast.success('Welcome! +100 credits for joining!');
       navigate(createPageUrl('Home'));
-    } catch (error) {
+    } catch {
       toast.error('Error creating quests');
     }
   };

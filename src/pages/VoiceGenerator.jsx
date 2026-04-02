@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { createPageUrl } from '../utils';
-import { ArrowLeft, Play, Square, Download, Loader2, Mic, Volume2 } from 'lucide-react';
+import { ArrowLeft, Play, Square, Loader2, Mic, Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { voiceSynthesis } from '../lib/voiceSynthesis';
 

@@ -5,11 +5,10 @@ import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Send, Loader2, Volume2, Mic } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Mic } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import VoicePlayer from '../components/voice/VoicePlayer';
 
 export default function Chat() {
   const [user, setUser] = useState(null);
