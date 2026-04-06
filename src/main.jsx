@@ -70,39 +70,34 @@ const neonColors = [
   { glow: '#f43f5e', bg: 'rgba(244,63,94,0.08)' },
 ]
 
-const specialists = [
-  { name: 'App Maker', icon: 'appmaker', desc: 'Build production-ready apps with AI', ci: 4, page: 'Inventor' },
-  { name: 'Wellness Center', icon: 'wellness', desc: 'Health & wellness guidance', ci: 0 },
-  { name: 'Video Editor', icon: 'video', desc: 'AI video editing tools', ci: 1 },
-  { name: 'Oracle Council', icon: 'oracle', desc: 'Strategic AI advisors', ci: 0 },
-  { name: 'Titan Heart', icon: 'titan', desc: 'Fitness & strength coach', ci: 3 },
-  { name: 'Builder', icon: 'builder', desc: 'Construction & project planning', ci: 2 },
-  { name: 'Mechanic', icon: 'mechanic', desc: 'Vehicle & machinery repair', ci: 5 },
-  { name: 'Interpreter', icon: 'interpreter', desc: '200+ language translation', ci: 2 },
-  { name: 'Handyman', icon: 'handyman', desc: 'Home repair guidance', ci: 4 },
-  { name: 'Mind Hub', icon: 'mind', desc: 'Mental health support', ci: 0 },
-  { name: 'Safety Center', icon: 'safety', desc: 'Personal safety tools', ci: 6 },
-  { name: 'Movie Maker', icon: 'movie', desc: 'AI movie generation', ci: 1 },
-  { name: 'Voice Generator', icon: 'voice', desc: '200 multilingual voices', ci: 5 },
-  { name: 'Digital Mall', icon: 'mall', desc: 'Digital marketplace', ci: 3 },
-  { name: 'Family Hub', icon: 'family', desc: 'Family management tools', ci: 2 },
-  { name: 'Professional Hub', icon: 'professional', desc: 'Career & business tools', ci: 4 },
-  { name: 'Training Center', icon: 'training', desc: 'Oracle training system', ci: 0, page: 'OracleTrainingCenter' },
-  { name: 'Community Hub', icon: 'community', desc: 'Social & community features', ci: 5 },
-  { name: 'Crisis Hub', icon: 'crisis', desc: 'Emergency support system', ci: 6 },
-  { name: 'Live Vision', icon: 'vision', desc: 'Camera & AR features', ci: 1 },
-  { name: 'Diagnostic Center', icon: 'diagnostic', desc: 'Self-diagnosing repair system', ci: 6, page: 'DiagnosticCenter' },
-  { name: 'Marketing Hub', icon: 'marketing', desc: 'SMS, Email, Voice & AI Campaigns', ci: 1, page: 'MarketingHub' },
+// All launchable apps — no more "specialists", Oracle handles everything
+const APPS = [
+  { name: 'AI Chat', icon: 'oracle', desc: 'Talk to SOLACE Oracle', ci: 0, page: 'Chat' },
+  { name: 'App Maker', icon: 'appmaker', desc: 'Build apps with AI', ci: 4, page: 'Inventor' },
+  { name: 'Video Editor', icon: 'video', desc: 'AI video tools', ci: 1, page: 'VideoEditor' },
+  { name: 'Movie Maker', icon: 'movie', desc: 'AI movie generation', ci: 1, page: 'MovieMaker' },
+  { name: 'Voice Generator', icon: 'voice', desc: 'Multilingual voices', ci: 5, page: 'VoiceGenerator' },
+  { name: 'Interpreter', icon: 'interpreter', desc: '200+ languages', ci: 2, page: 'Interpreter' },
+  { name: 'Avatar Companion', icon: 'wellness', desc: 'AI partner with room', ci: 0, page: 'AvatarCompanion' },
+  { name: 'Live Vision', icon: 'vision', desc: 'Camera & AR', ci: 1, page: 'LiveVision' },
+  { name: 'Marketing Hub', icon: 'marketing', desc: 'AI campaigns', ci: 1, page: 'MarketingHub' },
+  { name: 'Diagnostics', icon: 'diagnostic', desc: 'Self-repair system', ci: 6, page: 'DiagnosticCenter' },
+  { name: 'Safety', icon: 'safety', desc: 'Personal safety', ci: 6, page: 'SafetyCenter' },
+  { name: 'Digital Mall', icon: 'mall', desc: 'Marketplace', ci: 3, page: 'SovereignMall' },
+  { name: 'Settings', icon: 'mind', desc: 'Preferences', ci: 2, page: 'Settings' },
+  { name: 'App Store', icon: 'mall', desc: 'Connect any app + billing', ci: 4, page: 'AppStore' },
+  { name: 'Owner Dashboard', icon: 'professional', desc: 'Revenue & analytics', ci: 4, page: 'OwnerDashboard' },
+  { name: 'Home', icon: 'builder', desc: 'All tools grid', ci: 3, page: 'Home' },
 ]
 
-const ownerPages = [
-  'AllSpecialists', 'Builder', 'Chat', 'CommunityHub', 'CrisisHub',
-  'Dashboard', 'DiagnosticCenter', 'DigitalMall', 'FamilyHub', 'Handyman', 'Home', 'MarketingHub',
+const allPages = [
+  'AppStore', 'AvatarCompanion', 'Builder', 'Chat', 'CommunityHub', 'CrisisHub',
+  'Dashboard', 'DiagnosticCenter', 'FamilyHub', 'Handyman', 'Home', 'MarketingHub',
   'Interpreter', 'Inventor', 'LiveVision', 'Mechanic', 'MediaLibrary',
   'MindHub', 'MovieMaker', 'OracleCouncil', 'OracleTrainingCenter',
-  'OwnerDashboard', 'PhygitalHub', 'ProfessionalHub', 'Profile',
-  'SafetyCenter', 'Settings', 'SovereignEmpire', 'SpecialistChat',
-  'TierSystem', 'TitanHeart', 'VideoEditor', 'VoiceGenerator', 'WellnessCenter'
+  'OwnerDashboard', 'ProfessionalHub', 'Profile',
+  'SafetyCenter', 'Settings', 'SovereignMall', 'SovereignEmpire',
+  'TitanHeart', 'VideoEditor', 'VoiceGenerator', 'WellnessCenter'
 ]
 
 // ═══════════════════════════════════════════
@@ -183,7 +178,30 @@ function injectCSS() {
     @keyframes floatUp { 0%{transform:translateY(4px);opacity:0} 100%{transform:translateY(0);opacity:1} }
     @keyframes spinLoader { to{transform:rotate(360deg)} }
     @keyframes glowShift { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(30deg)} }
-    body { margin:0; background:#06060f; }
+    @keyframes borderGlow { 0%{border-color:rgba(139,92,246,0.2)} 50%{border-color:rgba(236,72,153,0.3)} 100%{border-color:rgba(139,92,246,0.2)} }
+    @keyframes subtlePulse { 0%,100%{opacity:0.7} 50%{opacity:1} }
+
+    /* ═══ NUCLEAR BLACK BACKGROUND — EVERY SCREEN ═══ */
+    html, body, #root { margin:0; background:#000 !important; color:#e2e8f0; min-height:100vh; }
+    body * { box-sizing: border-box; }
+    .min-h-screen, [class*="min-h-screen"] { background: #000 !important; }
+    [class*="bg-gradient-to"], [class*="from-amber"], [class*="from-purple"],
+    [class*="from-blue"], [class*="from-green"], [class*="from-red"],
+    [class*="from-yellow"], [class*="from-pink"], [class*="from-cyan"],
+    [class*="via-yellow"], [class*="via-purple"] {
+      background: #000 !important;
+    }
+    [class*="bg-white"], [class*="bg-gray-1"], [class*="bg-gray-5"],
+    [class*="bg-amber-"], [class*="bg-yellow-"], [class*="bg-green-5"],
+    [class*="bg-blue-5"], [class*="bg-red-5"], [class*="bg-purple-5"],
+    [class*="bg-pink-5"], [class*="bg-orange-5"] {
+      background: rgba(8,8,18,0.9) !important;
+    }
+    /* Kill any white/light text on dark cards */
+    [class*="text-amber-9"], [class*="text-gray-6"], [class*="text-gray-7"],
+    [class*="text-amber-7"], [class*="text-gray-8"] {
+      color: #a3a3c2 !important;
+    }
     .neon-bubble {
       position:relative; border-radius:20px; padding:28px 24px;
       background:rgba(10,10,20,0.7); backdrop-filter:blur(12px);
@@ -233,20 +251,102 @@ function injectCSS() {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
     }
 
-    /* ── Cards: glass-morphism with neon edge ── */
+    /* ── Cards: dark glass with neon borders ── */
     .rounded-xl, .rounded-lg, .rounded-2xl,
     [class*="bg-gray-900"], [class*="bg-gray-800\\/"],
-    [class*="bg-black\\/"], .card, [class*="text-card"] {
-      background: rgba(8,8,18,0.75) !important;
-      backdrop-filter: blur(16px) !important;
-      border: 1px solid rgba(139,92,246,0.12) !important;
-      box-shadow: 0 0 1px rgba(139,92,246,0.1), 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+    [class*="bg-black\\/"], .card, [class*="text-card"],
+    [class*="bg-white/95"], [class*="bg-white/90"],
+    [class*="bg-white/80"], [class*="bg-white/10"] {
+      background: rgba(6,6,14,0.85) !important;
+      backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(139,92,246,0.1) !important;
+      box-shadow: 0 0 1px rgba(139,92,246,0.08), 0 4px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02) !important;
       transition: all 0.3s cubic-bezier(0.4,0,0.2,1) !important;
+      color: #e2e8f0 !important;
     }
     .rounded-xl:hover, .rounded-lg:hover, .rounded-2xl:hover,
     [class*="bg-gray-900"]:hover {
       border-color: rgba(139,92,246,0.25) !important;
       box-shadow: 0 0 2px rgba(139,92,246,0.15), 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(139,92,246,0.05), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+    }
+
+    /* ── Tab system: colorful gradient pills ── */
+    [role="tablist"] {
+      background: rgba(6,6,14,0.6) !important;
+      border: 1px solid rgba(255,255,255,0.05) !important;
+      border-radius: 14px !important;
+      padding: 4px !important;
+      gap: 2px !important;
+      border-bottom: none !important;
+    }
+    [role="tab"] {
+      background: transparent !important;
+      border: none !important;
+      border-radius: 10px !important;
+      color: #64748b !important;
+      font-weight: 600 !important;
+      font-size: 0.78rem !important;
+      padding: 8px 14px !important;
+      transition: all 0.25s !important;
+      letter-spacing: 0.02em !important;
+    }
+    [role="tab"]:hover {
+      background: rgba(139,92,246,0.08) !important;
+      color: #a78bfa !important;
+    }
+    [role="tab"][data-state="active"], [role="tab"][aria-selected="true"] {
+      background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(236,72,153,0.2)) !important;
+      color: #e9d5ff !important;
+      box-shadow: 0 0 12px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(139,92,246,0.2) !important;
+    }
+    [role="tabpanel"] {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    /* ── Toggle switches: neon ── */
+    [role="switch"] {
+      background: rgba(30,30,50,0.8) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+    }
+    [role="switch"][data-state="checked"] {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899) !important;
+      border-color: rgba(139,92,246,0.4) !important;
+      box-shadow: 0 0 12px rgba(139,92,246,0.3) !important;
+    }
+
+    /* ── Select dropdowns ── */
+    [role="combobox"], [class*="SelectTrigger"], [data-radix-select-trigger] {
+      background: rgba(6,6,14,0.9) !important;
+      border: 1px solid rgba(139,92,246,0.15) !important;
+      color: #e2e8f0 !important;
+      border-radius: 10px !important;
+    }
+    [role="listbox"], [data-radix-select-content] {
+      background: rgba(8,8,18,0.98) !important;
+      border: 1px solid rgba(139,92,246,0.15) !important;
+      backdrop-filter: blur(20px) !important;
+    }
+    [role="option"] {
+      color: #c4c4e0 !important;
+    }
+    [role="option"]:hover, [role="option"][data-highlighted] {
+      background: rgba(139,92,246,0.12) !important;
+      color: #e9d5ff !important;
+    }
+
+    /* ── Feature toggle rows (Settings) ── */
+    [class*="bg-green-50"], [class*="bg-blue-50"], [class*="bg-purple-50"],
+    [class*="bg-pink-50"], [class*="bg-yellow-50"], [class*="bg-orange-50"],
+    [class*="bg-red-50"], [class*="bg-amber-50"], [class*="bg-gray-100"] {
+      background: rgba(10,10,25,0.7) !important;
+      border: 1px solid rgba(255,255,255,0.05) !important;
+      border-radius: 14px !important;
+      color: #e2e8f0 !important;
+    }
+    [class*="text-gray-600"], [class*="text-sm text-gray"] {
+      color: #64748b !important;
     }
 
     /* ── Inputs: sleek dark with neon focus ring ── */
@@ -423,8 +523,6 @@ function OwnerDashboard() {
   const [PageComponent, setPageComponent] = React.useState(null)
   const [pageError, setPageError] = React.useState(null)
   const [loadingPage, setLoadingPage] = React.useState(false)
-  const [showFullMenu, setShowFullMenu] = React.useState(false)
-
   React.useEffect(() => { injectCSS() }, [])
 
   // Listen for navigation events from Chat/Oracle intent routing
@@ -463,15 +561,146 @@ function OwnerDashboard() {
     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
   }
 
+  // ── Global floating app launcher (visible on EVERY page) — TOP, draggable, professional ──
+  const AppLauncher = () => {
+    const [open, setOpen] = React.useState(false)
+    const [launcherPos, setLauncherPos] = React.useState({ x: Math.max(0, (window.innerWidth / 2) - 30), y: 10 })
+    const [draggingLauncher, setDraggingLauncher] = React.useState(false)
+    const launcherDragOff = React.useRef({ x: 0, y: 0 })
+
+    React.useEffect(() => {
+      if (!draggingLauncher) return
+      const onMove = (e) => {
+        setLauncherPos({
+          x: Math.max(0, Math.min(window.innerWidth - 60, e.clientX - launcherDragOff.current.x)),
+          y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - launcherDragOff.current.y)),
+        })
+      }
+      const onUp = () => setDraggingLauncher(false)
+      window.addEventListener('mousemove', onMove)
+      window.addEventListener('mouseup', onUp)
+      window.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMove(t) })
+      window.addEventListener('touchend', onUp)
+      return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+    }, [draggingLauncher])
+
+    const startDrag = (e) => {
+      const clientX = e.clientX || e.touches?.[0]?.clientX || 0
+      const clientY = e.clientY || e.touches?.[0]?.clientY || 0
+      launcherDragOff.current = { x: clientX - launcherPos.x, y: clientY - launcherPos.y }
+      setDraggingLauncher(true)
+    }
+
+    return (
+      <>
+        {/* Floating launcher button — TOP of screen, draggable */}
+        <div
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+          style={{
+            position: 'fixed', left: launcherPos.x, top: launcherPos.y, zIndex: 9999,
+            touchAction: 'none', userSelect: 'none',
+          }}
+        >
+          <button
+            onClick={() => { if (!draggingLauncher) setOpen(!open) }}
+            style={{
+              width: '52px', height: '52px', borderRadius: '14px',
+              background: open ? 'rgba(244,63,94,0.85)' : 'rgba(15,15,30,0.85)',
+              border: open ? '1px solid rgba(244,63,94,0.4)' : '1px solid rgba(139,92,246,0.2)',
+              cursor: draggingLauncher ? 'grabbing' : 'grab',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.5), 0 0 24px rgba(139,92,246,0.15)',
+              backdropFilter: 'blur(16px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: draggingLauncher ? 'none' : 'all 0.3s',
+            }}
+          >
+            {open ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            ) : (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="1.5" strokeLinecap="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+            )}
+          </button>
+          {!open && <div style={{ textAlign: 'center', color: '#64748b', fontSize: '0.55rem', fontFamily: 'monospace', letterSpacing: '0.05em', marginTop: '2px', pointerEvents: 'none' }}>APPS</div>}
+        </div>
+
+        {/* App grid overlay */}
+        {open && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 9998,
+            background: 'rgba(6,6,15,0.95)', backdropFilter: 'blur(30px)',
+            overflowY: 'auto', display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ padding: '24px 24px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ ...logoStyle, fontSize: '1.4rem' }}>SOLACE Apps</div>
+                <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '4px' }}>Open any app from anywhere</div>
+              </div>
+              <button onClick={() => setOpen(false)} style={{
+                background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)',
+                borderRadius: '10px', padding: '8px 20px', color: '#fca5a5', cursor: 'pointer',
+                fontSize: '0.82rem', fontWeight: 600,
+              }}>Close</button>
+            </div>
+
+            <div style={{ flex: 1, padding: '12px 24px 100px', overflowY: 'auto' }}>
+              {/* Main apps grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '12px', marginBottom: '32px' }}>
+                {APPS.map((app, i) => {
+                  const nc = neonColors[app.ci]
+                  return (
+                    <div key={app.name}
+                      onClick={() => { setOpen(false); navigateTo(app.page); }}
+                      style={{
+                        background: 'rgba(10,10,20,0.7)', backdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px',
+                        padding: '20px 14px', textAlign: 'center', cursor: 'pointer',
+                        transition: 'all 0.25s',
+                      }}
+                      onMouseOver={(e) => { e.currentTarget.style.borderColor = nc.glow + '40'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
+                      onMouseOut={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', background: nc.bg, border: `1px solid ${nc.glow}22` }}>
+                        <Icon path={ICONS[app.icon]} color={nc.glow} size={22} />
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '0.82rem', color: '#e2e8f0', marginBottom: '2px' }}>{app.name}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#64748b', lineHeight: 1.3 }}>{app.desc}</div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* All pages quick links */}
+              <div style={{ marginBottom: '8px' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '10px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>All Pages</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
+                {allPages.map((page) => (
+                  <div key={page} className="page-pill" onClick={() => { setOpen(false); navigateTo(page); }}>
+                    {page.replace(/([A-Z])/g, ' $1').trim()}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )
+  }
+
   // Render loaded page
   if (activePage && PageComponent && !loadingPage) {
+    const isChat = activePage === 'Chat';
     return (
       <BrowserRouter>
-        <div style={{ minHeight: '100vh', background: '#06060f', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+        <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
           <div style={headerStyle}>
             <div style={{ ...logoStyle, cursor: 'pointer' }} onClick={goHome}>SOLACE</div>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <span style={{ color: '#64748b', fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{activePage}</span>
+              <span style={{ color: '#64748b', fontSize: '0.8rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{activePage.replace(/([A-Z])/g, ' $1').trim()}</span>
               <button onClick={goHome} style={{
                 background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)',
                 borderRadius: '8px', padding: '6px 16px', color: '#c4b5fd', cursor: 'pointer',
@@ -488,7 +717,9 @@ function OwnerDashboard() {
               <PageComponent />
             </React.Suspense>
           </PageErrorBoundary>
-          <OracleMaster onNavigate={navigateTo} onGoHome={goHome} />
+          <AppLauncher />
+          {/* Hide OracleMaster on Chat page (it has its own oracle). Show as minimal draggable orb on all other pages */}
+          {!isChat && <OracleMaster onNavigate={navigateTo} onGoHome={goHome} minimal />}
         </div>
       </BrowserRouter>
     )
@@ -497,10 +728,10 @@ function OwnerDashboard() {
   // Loading state
   if (loadingPage) {
     return (
-      <div style={{ minHeight: '100vh', background: '#06060f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: '40px', height: '40px', border: '2px solid rgba(139,92,246,0.15)', borderTopColor: '#a855f7', borderRadius: '50%', animation: 'spinLoader 0.8s linear infinite', margin: '0 auto 20px' }} />
-          <p style={{ color: '#64748b', fontSize: '0.9rem', letterSpacing: '0.05em' }}>Loading {activePage}...</p>
+          <p style={{ color: '#64748b', fontSize: '0.9rem', letterSpacing: '0.05em' }}>Loading...</p>
         </div>
       </div>
     )
@@ -509,126 +740,27 @@ function OwnerDashboard() {
   // Page load error
   if (pageError) {
     return (
-      <div style={{ minHeight: '100vh', background: '#06060f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
         <div style={{ textAlign: 'center', maxWidth: '500px', padding: '40px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <Icon path={ICONS.crisis} color="#f43f5e" size={22} />
           </div>
           <p style={{ color: '#f87171', marginBottom: '16px', fontSize: '0.9rem' }}>{pageError}</p>
-          <button onClick={goHome} className="page-pill" style={{ display: 'inline-block', color: '#c4b5fd' }}>Back to Dashboard</button>
+          <button onClick={goHome} className="page-pill" style={{ display: 'inline-block', color: '#c4b5fd' }}>Back</button>
         </div>
+        <AppLauncher />
       </div>
     )
   }
 
-  // Main dashboard - Oracle-centric
-  const stats = [
-    { num: '20', label: 'AI Specialists', color: '#a855f7' },
-    { num: '45', label: 'Total Pages', color: '#ec4899' },
-    { num: '$0', label: 'Monthly Revenue', color: '#22c55e' },
-    { num: '1', label: 'Total Users', color: '#3b82f6' },
-  ]
-
+  // Main landing — FULL-SCREEN ORACLE is the single interface, one Oracle only
   return (
-    <div style={{ minHeight: '100vh', background: '#06060f', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif", position: 'relative' }}>
-      {/* Background radials */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse at 20% 30%, rgba(139,92,246,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 60%, rgba(236,72,153,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 90%, rgba(59,130,246,0.03) 0%, transparent 40%)'
-      }} />
+    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: "'Segoe UI', system-ui, sans-serif", position: 'relative' }}>
+      {/* Full-screen Oracle — the ONE and ONLY oracle on the main screen */}
+      <OracleMaster onNavigate={navigateTo} onGoHome={goHome} fullScreen />
 
-      {/* Minimal Header */}
-      <div style={{ ...headerStyle, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, background: 'rgba(6,6,15,0.8)', backdropFilter: 'blur(20px)' }}>
-        <div style={logoStyle}>SOLACE</div>
-        <button 
-          onClick={() => setShowFullMenu(!showFullMenu)}
-          style={{
-            background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)',
-            borderRadius: '12px', padding: '8px 20px', fontSize: '0.85rem', color: '#c4b5fd',
-            fontWeight: 600, letterSpacing: '0.02em', cursor: 'pointer', transition: 'all 0.3s'
-          }}
-        >
-          {showFullMenu ? 'Hide Menu' : 'Show All Features'}
-        </button>
-      </div>
-
-      {/* Full Menu Overlay - Only shows when toggled */}
-      {showFullMenu && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(6,6,15,0.95)', backdropFilter: 'blur(30px)', overflowY: 'auto', paddingTop: '80px' }}>
-          <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-            <button 
-              onClick={() => setShowFullMenu(false)}
-              style={{
-                position: 'fixed', top: '20px', right: '20px', background: 'rgba(244,63,94,0.2)', border: '1px solid rgba(244,63,94,0.4)',
-                borderRadius: '12px', padding: '10px 24px', fontSize: '0.9rem', color: '#fca5a5',
-                fontWeight: 600, cursor: 'pointer', zIndex: 101
-              }}
-            >
-              Close Menu
-            </button>
-
-            {/* Stats Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '48px' }}>
-              {stats.map((s) => (
-                <div key={s.label} className="stat-orb" style={{ '--stat-color': s.color }}>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.num}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '6px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Specialists */}
-            <div style={{ marginBottom: '8px' }}>
-              <h2 style={{
-                fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
-                background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>AI Specialists</h2>
-              <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Your sovereign AI team — tap any bubble to launch</p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', marginTop: '20px' }}>
-              {specialists.map((s, i) => {
-                const nc = neonColors[s.ci]
-                return (
-                  <div key={s.name} className="neon-bubble"
-                    style={{ animationDelay: `${i * 0.04}s`, '--neon-glow': nc.glow }}
-                    onClick={() => { setShowFullMenu(false); navigateTo(s.page || s.name.replace(/\s+/g, '')); }}
-                  >
-                    <style>{`.neon-bubble:nth-child(${i+1})::after { background: ${nc.glow}; }`}</style>
-                    <div className="icon-orb" style={{ background: nc.bg, border: `1px solid ${nc.glow}22` }}>
-                      <style>{`.neon-bubble:nth-child(${i+1}) .icon-orb::after { border: 1px solid ${nc.glow}33; }`}</style>
-                      <Icon path={ICONS[s.icon]} color={nc.glow} size={26} />
-                    </div>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#e2e8f0', marginBottom: '4px', letterSpacing: '-0.01em' }}>{s.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', lineHeight: 1.4 }}>{s.desc}</div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* All Pages */}
-            <div style={{ marginTop: '56px', marginBottom: '8px' }}>
-              <h2 style={{
-                fontSize: '1.3rem', fontWeight: 700, letterSpacing: '-0.01em',
-                background: 'linear-gradient(90deg, #e2e8f0, #a78bfa)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-              }}>All Pages</h2>
-              <p style={{ color: '#475569', fontSize: '0.82rem', marginTop: '4px' }}>Navigate to any section of the app</p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginTop: '16px', paddingBottom: '60px' }}>
-              {ownerPages.map((page) => (
-                <div key={page} className="page-pill" onClick={() => { setShowFullMenu(false); navigateTo(page); }}>
-                  {page.replace(/([A-Z])/g, ' $1').trim()}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ORACLE IS THE MAIN INTERFACE */}
-      <OracleMaster onNavigate={navigateTo} onGoHome={goHome} />
+      {/* App launcher — draggable at top of screen */}
+      <AppLauncher />
     </div>
   )
 }

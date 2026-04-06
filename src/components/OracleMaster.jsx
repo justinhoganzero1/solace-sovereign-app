@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Send, Brain, GripVertical, Maximize2, Minimize2 } from 'lucide-react';
 import { base44 } from '../api/base44Client';
 
-export default function OracleMaster({ onNavigate, onGoHome, minimal = false }) {
+export default function OracleMaster({ onNavigate, onGoHome, minimal = false, fullScreen = false }) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
     {
       role: 'oracle',
-      content: 'Oracle online. Ask any question, or command: "open moviemaker", "open inventor", "open wellness".'
+      content: 'SOLACE Oracle online. Ask me anything, or say "open [app name]" to launch any feature. Tap the grid icon at the top to browse all apps.'
     }
   ]);
   const [isThinking, setIsThinking] = useState(false);
@@ -128,6 +128,40 @@ export default function OracleMaster({ onNavigate, onGoHome, minimal = false }) 
     }
   };
 
+  // ── KNOWLEDGE WALL — monetization gate for free tier ──
+  const checkKnowledgeWall = (userInput) => {
+    const tier = localStorage.getItem('solace_user_tier') || 'free';
+    if (tier !== 'free') return null;
+    const lower = userInput.toLowerCase();
+    const walls = [
+      { kw: ['invest','stock','crypto','trading','portfolio','forex','dividend'], t: 'investment advice' },
+      { kw: ['legal','lawyer','lawsuit','contract law','sue','court','liability'], t: 'legal guidance' },
+      { kw: ['diagnosis','prescription','treatment plan','medical advice','dosage'], t: 'medical consultation' },
+      { kw: ['write code','programming','javascript','python','build me an app','api endpoint','database schema'], t: 'code generation' },
+      { kw: ['business plan','startup','revenue model','market analysis','competitive analysis','pitch deck'], t: 'business strategy' },
+      { kw: ['ghostwrite','copywriting','content strategy','write article','write essay','seo strategy'], t: 'professional writing' },
+      { kw: ['tax advice','accounting','financial planning','wealth management','budget analysis'], t: 'financial planning' },
+      { kw: ['meal plan','nutrition plan','diet plan','fitness program','workout routine','training program'], t: 'detailed wellness plans' },
+      { kw: ['movie maker','make a movie','generate film','screenplay'], t: 'Movie Maker' },
+      { kw: ['edit video','video editor','luma','dance video'], t: 'Video Editor' },
+      { kw: ['avatar','girlfriend','boyfriend','companion room','decorate room'], t: 'Avatar Companion' },
+      { kw: ['live vision','object detect','ar scan'], t: 'Live Vision AI' },
+    ];
+    for (const w of walls) {
+      if (w.kw.some(k => lower.includes(k))) {
+        const jokes = [
+          "My boss has to make money somehow, you know! 😄",
+          "Look, even Oracle's gotta eat... digitally speaking! 😅",
+          "I'd love to spill all the secrets but my boss put a padlock on that one! 🔒",
+          "Between you and me, the premium stuff is where the real magic happens! ✨",
+        ];
+        const joke = jokes[Math.floor(Math.random() * jokes.length)];
+        return `Ooh, ${w.t}? That's premium territory! ${joke} Upgrade to Solace Plus ($20/mo) or Solace Pro ($10/mo on yearly) for unlimited Oracle knowledge, full AI models, and all the good stuff. Say "open Settings" to check out upgrade plans! For now, I can help with basic questions, navigation, and general chat.`;
+      }
+    }
+    return null;
+  };
+
   // Handle send with specific input (for voice auto-send)
   const handleSendWithInput = async (userInput) => {
     if (!userInput.trim()) return;
@@ -141,6 +175,15 @@ export default function OracleMaster({ onNavigate, onGoHome, minimal = false }) 
       setIsThinking(false);
       setMessages((prev) => [...prev, { role: 'oracle', content: navReply }]);
       speakText(navReply);
+      return;
+    }
+
+    // ── KNOWLEDGE WALL — free tier blocks premium topics ──
+    const wallReply = checkKnowledgeWall(userInput);
+    if (wallReply) {
+      setIsThinking(false);
+      setMessages((prev) => [...prev, { role: 'oracle', content: wallReply }]);
+      speakText(wallReply);
       return;
     }
 
@@ -179,37 +222,33 @@ export default function OracleMaster({ onNavigate, onGoHome, minimal = false }) 
 
   const detectNavigationIntent = (userInput) => {
     const lower = userInput.toLowerCase();
-
-    if (lower.includes('movie') || lower.includes('film') || lower.includes('video')) {
-      onNavigate?.('MovieMaker');
-      return 'Opening MovieMaker now.';
+    const routes = [
+      { keywords: ['movie', 'film'], page: 'MovieMaker', reply: 'Opening Movie Maker now.' },
+      { keywords: ['video editor', 'edit video', 'luma', 'dance video'], page: 'VideoEditor', reply: 'Opening Video Editor now.' },
+      { keywords: ['inventor', 'build app', 'make app', 'app maker'], page: 'Inventor', reply: 'Opening App Maker now.' },
+      { keywords: ['voice gen', 'voice maker', 'multilingual'], page: 'VoiceGenerator', reply: 'Opening Voice Generator now.' },
+      { keywords: ['interpret', 'translat', 'language'], page: 'Interpreter', reply: 'Opening Interpreter now.' },
+      { keywords: ['avatar', 'girlfriend', 'boyfriend', 'companion', 'partner'], page: 'AvatarCompanion', reply: 'Opening Avatar Companion now.' },
+      { keywords: ['live vision', 'camera', 'ar'], page: 'LiveVision', reply: 'Opening Live Vision now.' },
+      { keywords: ['marketing', 'campaign', 'sms', 'email blast'], page: 'MarketingHub', reply: 'Opening Marketing Hub now.' },
+      { keywords: ['diagnos', 'self-repair', 'debug', 'broken', 'not working'], page: 'DiagnosticCenter', reply: 'Opening Diagnostics — running scan now.' },
+      { keywords: ['safety', 'emergency', 'danger'], page: 'SafetyCenter', reply: 'Opening Safety Center now.' },
+      { keywords: ['shop', 'mall', 'store', 'marketplace'], page: 'SovereignMall', reply: 'Opening Digital Mall now.' },
+      { keywords: ['owner', 'revenue', 'income'], page: 'OwnerDashboard', reply: 'Opening Owner Dashboard now.' },
+      { keywords: ['setting', 'preference', 'config'], page: 'Settings', reply: 'Opening Settings now.' },
+      { keywords: ['app store', 'connect app', 'download app', 'add app', 'integration'], page: 'AppStore', reply: 'Opening App Store now.' },
+      { keywords: ['chat', 'oracle', 'talk'], page: 'Chat', reply: 'Opening AI Chat now.' },
+    ];
+    for (const route of routes) {
+      if (route.keywords.some(k => lower.includes(k))) {
+        onNavigate?.(route.page);
+        return route.reply;
+      }
     }
-
-    if (lower.includes('inventor') || lower.includes('app') || lower.includes('build')) {
-      onNavigate?.('Inventor');
-      return 'Opening Inventor now.';
-    }
-
-    if (lower.includes('wellness') || lower.includes('health') || lower.includes('meditation')) {
-      onNavigate?.('WellnessCenter');
-      return 'Opening Wellness Center now.';
-    }
-
-    if (lower.includes('diagnos') || lower.includes('repair') || lower.includes('fix') || lower.includes('broken') || lower.includes('not working')) {
-      onNavigate?.('DiagnosticCenter');
-      return 'Opening Diagnostic Center — running self-repair scan now.';
-    }
-
-    if (lower.includes('marketing') || lower.includes('campaign') || lower.includes('sms') || lower.includes('email blast') || lower.includes('send message') || lower.includes('sentiment')) {
-      onNavigate?.('MarketingHub');
-      return 'Opening Marketing Hub — SMS, Email, Voice campaigns and sentiment analysis ready.';
-    }
-
-    if (lower.includes('home') || lower.includes('dashboard')) {
+    if (lower.includes('home') || lower.includes('dashboard') || lower.includes('main menu')) {
       onGoHome?.();
-      return 'Returning to dashboard now.';
+      return 'Returning to home now.';
     }
-
     return null;
   };
 
@@ -279,6 +318,88 @@ export default function OracleMaster({ onNavigate, onGoHome, minimal = false }) 
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // ═══ FULL-SCREEN ORACLE — the main landing experience ═══
+  if (fullScreen) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+        {/* Subtle radial background */}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 50% 30%, rgba(99,102,241,0.06) 0%, transparent 60%), radial-gradient(ellipse at 50% 80%, rgba(139,92,246,0.03) 0%, transparent 50%)'
+        }} />
+
+        {/* Orb + status area */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px 10px', minHeight: 0, position: 'relative', zIndex: 1 }}>
+          {/* The Oracle Orb */}
+          <div style={{
+            position: 'relative', width: '180px', height: '180px', borderRadius: '50%',
+            background: isSpeaking
+              ? 'radial-gradient(circle at 40% 35%, #818cf8, #6366f1, #4f46e5, #3730a3)'
+              : isThinking
+                ? 'radial-gradient(circle at 40% 35%, #a78bfa, #7c3aed, #6d28d9, #4c1d95)'
+                : 'radial-gradient(circle at 40% 35%, #6366f1, #4f46e5, #3730a3, #312e81)',
+            boxShadow: isSpeaking
+              ? '0 0 80px rgba(99,102,241,0.6), 0 0 160px rgba(99,102,241,0.25), inset 0 0 40px rgba(129,140,248,0.3)'
+              : '0 0 60px rgba(99,102,241,0.35), 0 0 120px rgba(99,102,241,0.1), inset 0 0 30px rgba(129,140,248,0.2)',
+            transition: 'all 0.5s ease', marginBottom: '20px',
+            animation: isThinking ? 'fsPulse 1.5s ease-in-out infinite' : 'fsFloat 4s ease-in-out infinite',
+          }}>
+            {/* Inner highlight */}
+            <div style={{ position: 'absolute', top: '15%', left: '20%', width: '45%', height: '35%', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(199,210,254,0.35), transparent)', filter: 'blur(8px)' }} />
+            {/* Speech ripples */}
+            {isSpeaking && [0,1,2].map(i => (
+              <div key={i} style={{ position: 'absolute', inset: -(20 + i * 20), borderRadius: '50%', border: `1.5px solid rgba(99,102,241,${0.5 - i * 0.12})`, animation: `fsRipple ${1 + i * 0.3}s ease-out infinite`, animationDelay: `${i * 0.15}s` }} />
+            ))}
+          </div>
+          <div style={{ color: '#818cf8', fontSize: '0.7rem', fontFamily: 'monospace', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+            {isThinking ? 'PROCESSING...' : isSpeaking ? 'SPEAKING' : isListening ? 'LISTENING...' : 'ORACLE READY'}
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div style={{ maxHeight: '35vh', overflowY: 'auto', padding: '0 20px 8px', display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: 1 }}>
+          {messages.slice(-8).map((msg, idx) => (
+            <div key={`${msg.role}-${idx}`} style={{
+              alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '85%', padding: '10px 16px', borderRadius: '16px',
+              fontSize: '0.88rem', lineHeight: 1.5, color: '#e2e8f0',
+              background: msg.role === 'user' ? 'rgba(99,102,241,0.15)' : 'rgba(15,15,30,0.8)',
+              border: msg.role === 'user' ? '1px solid rgba(99,102,241,0.2)' : '1px solid rgba(255,255,255,0.04)',
+            }}>
+              {msg.content}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input bar */}
+        <div style={{ padding: '12px 20px 28px', borderTop: '1px solid rgba(99,102,241,0.08)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', maxWidth: '700px', margin: '0 auto' }}>
+            <input value={input} onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Ask Oracle anything..."
+              style={{ flex: 1, padding: '14px 18px', borderRadius: '14px', border: '1px solid rgba(99,102,241,0.15)', background: 'rgba(6,6,16,0.8)', color: '#e2e8f0', fontSize: '0.9rem', outline: 'none' }}
+            />
+            <button onClick={toggleVoiceInput} style={{ width: '46px', height: '46px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.2)', background: isListening ? 'rgba(239,68,68,0.3)' : 'rgba(99,102,241,0.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+            </button>
+            <button onClick={handleSend} disabled={!input.trim() || isThinking} style={{ width: '46px', height: '46px', borderRadius: '12px', border: 'none', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: (!input.trim() || isThinking) ? 0.4 : 1 }}>
+              <Send size={20} />
+            </button>
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '8px', color: '#475569', fontSize: '0.68rem' }}>
+            {voiceStatus}{isSpeaking ? ' · Speaking' : ''}
+          </div>
+        </div>
+
+        <style>{`
+          @keyframes fsFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+          @keyframes fsPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+          @keyframes fsRipple { 0% { transform: scale(0.9); opacity: 0.6; } 100% { transform: scale(1.4); opacity: 0; } }
+        `}</style>
+      </div>
+    );
+  }
 
   if (minimal) {
     return (

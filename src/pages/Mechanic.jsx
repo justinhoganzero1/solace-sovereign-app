@@ -219,8 +219,8 @@ Be thorough, practical, and include all necessary safety information.`;
   // ─── Instructions view (repair steps) ───
   if (mode === 'instructions' && instructions) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-950 via-red-950 to-black p-4 md:p-6">
-        <div className="max-w-4xl mx-auto">
+      <div style={{ minHeight: '100vh', background: '#000', color: '#e2e8f0', padding: '16px 20px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Button variant="ghost" className="text-white hover:bg-white/20 mb-4" onClick={resetMode}>
             <ArrowLeft className="w-5 h-5 mr-2" /> New Repair
           </Button>
@@ -290,17 +290,21 @@ Be thorough, practical, and include all necessary safety information.`;
 
   // ─── Main view ───
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-950 via-red-950 to-black p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Wrench className="w-8 h-8 text-orange-400" />
-          <div>
-            <h1 className="text-2xl font-bold text-white">Mechanic Mode</h1>
-            <p className="text-orange-300 text-sm">AI diagnostics + OBD-II codes + repair guidance</p>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#e2e8f0', padding: '0' }}>
+      {/* Header */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(249,115,22,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><Wrench size={24} style={{ color: '#f97316' }} /></button>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#f97316,#ef4444,#dc2626)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mechanic Mode</div>
+              <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>OBD-II CODES • AI DIAGNOSTICS • REPAIR</div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '16px 20px 120px' }}>
 
         {/* Tabs */}
         <div className="flex gap-2 mb-4">

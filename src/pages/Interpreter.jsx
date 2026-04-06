@@ -261,99 +261,73 @@ export default function Interpreter() {
 
   const speakerColor = (s) => s === 'me' ? '#3b82f6' : '#22c55e';
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-indigo-950 to-black p-4 md:p-6">
-      <div className="max-w-5xl mx-auto">
+  const S = {
+    page: { minHeight: '100vh', background: '#000', color: '#e2e8f0' },
+    hdr: { padding: '16px 24px', borderBottom: '1px solid rgba(59,130,246,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 },
+    panel: { background: 'rgba(6,6,16,0.85)', border: '1px solid rgba(59,130,246,0.08)', borderRadius: '18px', padding: '20px', marginBottom: '14px' },
+    modeBtn: (active) => ({ flex: 1, padding: '14px', borderRadius: '14px', border: `1px solid ${active ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(59,130,246,0.12)' : 'rgba(6,6,16,0.5)', color: active ? '#93c5fd' : '#64748b', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'all 0.25s' }),
+    micBtn: (active, col) => ({ position: 'relative', padding: '28px 16px', borderRadius: '18px', border: `2px solid ${active ? col : 'rgba(255,255,255,0.06)'}`, background: active ? col + '18' : 'rgba(6,6,16,0.6)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.3s', boxShadow: active ? `0 0 40px ${col}30` : 'none' }),
+    pill: (col) => ({ padding: '5px 12px', borderRadius: '8px', background: col + '10', border: `1px solid ${col}25`, color: col, fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }),
+  };
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Languages className="w-8 h-8 text-blue-400" />
+  return (
+    <div style={S.page}>
+      {/* Header */}
+      <div style={S.hdr}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><Languages size={24} style={{ color: '#3b82f6' }} /></button>
             <div>
-              <h1 className="text-2xl font-bold text-white">Real-Time Interpreter</h1>
-              <p className="text-blue-300 text-sm">{LANGUAGES.length}+ languages • Live conversation • Voice I/O</p>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#3b82f6,#22c55e)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Interpreter</div>
+              <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>{LANGUAGES.length}+ LANGUAGES • LIVE VOICE • REAL-TIME</div>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => setOutputMode(m => m === 'speaker' ? 'earbuds' : 'speaker')}
-              className="bg-white/10 border border-white/20 text-white hover:bg-white/20"
-            >
-              {outputMode === 'speaker' ? <Speaker className="w-4 h-4 mr-1" /> : <Headphones className="w-4 h-4 mr-1" />}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={S.pill(outputMode === 'speaker' ? '#3b82f6' : '#a855f7')} onClick={() => setOutputMode(m => m === 'speaker' ? 'earbuds' : 'speaker')}>
+              {outputMode === 'speaker' ? <Speaker size={13} /> : <Headphones size={13} />}
               {outputMode === 'speaker' ? 'Speaker' : 'Earbuds'}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setAutoSpeak(a => !a)}
-              className={`border border-white/20 ${autoSpeak ? 'bg-blue-600 text-white' : 'bg-white/10 text-white/60'}`}
-            >
-              {autoSpeak ? <Volume2 className="w-4 h-4 mr-1" /> : <VolumeX className="w-4 h-4 mr-1" />}
-              Auto-speak
-            </Button>
+            </div>
+            <div style={S.pill(autoSpeak ? '#22c55e' : '#64748b')} onClick={() => setAutoSpeak(a => !a)}>
+              {autoSpeak ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              Auto
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px 20px 120px' }}>
+        {/* Language selectors */}
+        <div style={S.panel}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '6px' }}>YOU SPEAK</div>
+              <Select value={myLang} onValueChange={setMyLang}>
+                <SelectTrigger style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '12px', color: '#93c5fd' }}><SelectValue /></SelectTrigger>
+                <SelectContent className="max-h-64">{LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.flag} {l.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <motion.button whileHover={{ scale: 1.15, rotate: 180 }} whileTap={{ scale: 0.9 }} onClick={swapLanguages}
+              style={{ marginTop: '18px', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ArrowRightLeft size={18} />
+            </motion.button>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.65rem', color: '#22c55e', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '6px' }}>THEY SPEAK</div>
+              <Select value={theirLang} onValueChange={setTheirLang}>
+                <SelectTrigger style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: '12px', color: '#86efac' }}><SelectValue /></SelectTrigger>
+                <SelectContent className="max-h-64">{LANGUAGES.map(l => <SelectItem key={l.code} value={l.code}>{l.flag} {l.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* Language selectors */}
-        <Card className="bg-white/5 border-white/10 mb-4">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-blue-300 font-semibold uppercase tracking-wider mb-1 block">You speak</label>
-                <Select value={myLang} onValueChange={setMyLang}>
-                  <SelectTrigger className="bg-blue-950/50 border-blue-500/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64">
-                    {LANGUAGES.map(l => (
-                      <SelectItem key={l.code} value={l.code}>{l.flag} {l.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <motion.button
-                whileHover={{ scale: 1.2, rotate: 180 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={swapLanguages}
-                className="mt-5 p-2 rounded-full bg-white/10 border border-white/20 text-white hover:bg-white/20"
-              >
-                <ArrowRightLeft className="w-5 h-5" />
-              </motion.button>
-
-              <div className="flex-1">
-                <label className="text-xs text-green-300 font-semibold uppercase tracking-wider mb-1 block">They speak</label>
-                <Select value={theirLang} onValueChange={setTheirLang}>
-                  <SelectTrigger className="bg-green-950/50 border-green-500/30 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-64">
-                    {LANGUAGES.map(l => (
-                      <SelectItem key={l.code} value={l.code}>{l.flag} {l.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Mode tabs */}
-        <div className="flex gap-2 mb-4">
-          <Button
-            onClick={() => { setMode('conversation'); stopListening(); }}
-            className={`flex-1 ${mode === 'conversation' ? 'bg-blue-600 text-white' : 'bg-white/5 text-white/60 border border-white/10'}`}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Live Conversation
-          </Button>
-          <Button
-            onClick={() => { setMode('text'); stopListening(); }}
-            className={`flex-1 ${mode === 'text' ? 'bg-blue-600 text-white' : 'bg-white/5 text-white/60 border border-white/10'}`}
-          >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Text Translate
-          </Button>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+          <div style={S.modeBtn(mode === 'conversation')} onClick={() => { setMode('conversation'); stopListening(); }}>
+            <Users size={16} /> Live Conversation
+          </div>
+          <div style={S.modeBtn(mode === 'text')} onClick={() => { setMode('text'); stopListening(); }}>
+            <MessageSquare size={16} /> Text Translate
+          </div>
         </div>
 
         {/* ═══ CONVERSATION MODE ═══ */}

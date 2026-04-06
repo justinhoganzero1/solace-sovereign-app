@@ -807,7 +807,118 @@ export default function DiagnosticCenter() {
         }
       }
       return `Removed ${fixed} corrupted entity records`;
-    }
+    },
+    // ── DEEP PAGE INSPECTION — enter the core of each page ──
+    deep_inspect_page: async (pageName) => {
+      const report = [];
+      try {
+        const mod = await import(`../pages/${pageName}.jsx`);
+        report.push(`✓ Module loaded (exports: ${Object.keys(mod).join(', ')})`);
+        const Component = mod.default;
+        if (!Component) {
+          report.push('✗ No default export — page cannot render');
+          return report.join('\n');
+        }
+        report.push(`✓ Default export: ${Component.name || 'anonymous'} (${typeof Component})`);
+        // Check if it uses hooks correctly by examining toString
+        const src = Component.toString();
+        if (src.includes('Link') && src.includes('createPageUrl')) {
+          report.push('✗ USES Link/createPageUrl — will crash (these were removed)');
+        }
+        if (src.includes('base44.entities')) report.push('⚠ Uses base44.entities — will fallback to localStorage');
+        if (src.includes('base44.functions')) report.push('⚠ Uses base44.functions — needs API connection');
+        if (src.includes('navigator.mediaDevices')) report.push('ℹ Uses camera/mic APIs');
+        if (src.includes('SpeechRecognition')) report.push('ℹ Uses speech recognition');
+        if (src.includes('localStorage')) report.push('ℹ Uses localStorage');
+        if (src.includes('fetch(') || src.includes('fetch (')) report.push('ℹ Makes network requests');
+        report.push(`✓ Source length: ${src.length} chars`);
+      } catch (err) {
+        report.push(`✗ FAILED to load: ${err.message}`);
+        report.push(`Stack: ${err.stack?.split('\n').slice(0,3).join(' | ')}`);
+      }
+      return report.join('\n');
+    },
+    // ── FETCH SOURCE FROM GITHUB for analysis ──
+    fetch_source: async (filePath) => {
+      try {
+        const resp = await fetch(`${GITHUB_RAW}/${filePath}`, { signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) return `Failed to fetch ${filePath}: HTTP ${resp.status}`;
+        const content = await resp.text();
+        // Analyze content
+        const lines = content.split('\n');
+        const issues = [];
+        lines.forEach((line, i) => {
+          if (line.includes('import') && line.includes('createPageUrl')) issues.push(`Line ${i+1}: Uses createPageUrl (removed)`);
+          if (line.includes('import') && line.includes("from 'react-router-dom'") && line.includes('Link')) issues.push(`Line ${i+1}: Uses Link from react-router-dom (removed)`);
+          if (line.includes('throw new Error') || line.includes('throw Error')) issues.push(`Line ${i+1}: Throws error intentionally`);
+        });
+        return `Source: ${filePath} (${lines.length} lines, ${content.length} chars)\nImports: ${lines.filter(l => l.trim().startsWith('import')).length}\nExports: ${lines.filter(l => l.includes('export')).length}\nIssues found: ${issues.length > 0 ? '\n' + issues.join('\n') : 'None'}`;
+      } catch (err) {
+        return `Fetch error: ${err.message}`;
+      }
+    },
+    // ── FIX NAVIGATION STATE ──
+    fix_navigation: () => {
+      // Dispatch a navigate event back to Home to reset any stuck navigation
+      window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'Home' } }));
+      return 'Navigation reset — dispatched solace-navigate to Home';
+    },
+    // ── INJECT RUNTIME FIX for known issues ──
+    inject_runtime_fix: (fixName) => {
+      const fixes = {
+        'voice_settings': () => {
+          localStorage.setItem('solace_entity_VoiceSettings', JSON.stringify([{
+            id: 'vs_default', created_by: 'justinbretthogan@gmail.com',
+            auto_play: true, voice_type: 'default', volume: 1.0, pitch: 1.0, rate: 1.0
+          }]));
+          return 'Voice settings initialized';
+        },
+        'oracle_memory': () => {
+          // Reset oracle memory to fresh state
+          localStorage.removeItem('solace_oracle_memory');
+          localStorage.removeItem('solace_conversations');
+          localStorage.removeItem('solace_user_profile_deep');
+          localStorage.removeItem('solace_interaction_stats');
+          return 'Oracle memory reset to fresh state';
+        },
+        'css_reinject': () => {
+          const existing = document.getElementById('solace-neon-css');
+          if (existing) existing.remove();
+          // Force re-render which will re-inject CSS
+          window.dispatchEvent(new Event('resize'));
+          return 'CSS cleared for re-injection on next render';
+        },
+        'error_boundary_reset': () => {
+          // Clear any error boundary states by triggering re-render
+          const root = document.getElementById('root');
+          if (root) {
+            root.querySelectorAll('[data-error]').forEach(el => el.remove());
+          }
+          return 'Error boundary elements cleared';
+        },
+      };
+      if (fixes[fixName]) {
+        return fixes[fixName]();
+      }
+      return `Unknown fix: ${fixName}. Available: ${Object.keys(fixes).join(', ')}`;
+    },
+    // ── TEST ALL PAGES AT ONCE ──
+    test_all_pages: async () => {
+      const results = { passed: [], failed: [] };
+      for (const page of ALL_PAGES) {
+        try {
+          await import(`../pages/${page}.jsx`);
+          results.passed.push(page);
+        } catch (err) {
+          results.failed.push({ page, error: err.message.split('\n')[0] });
+        }
+      }
+      let report = `Pages tested: ${ALL_PAGES.length}\nPassed: ${results.passed.length}\nFailed: ${results.failed.length}`;
+      if (results.failed.length > 0) {
+        report += '\n\nFailing pages:\n' + results.failed.map(f => `✗ ${f.page}: ${f.error}`).join('\n');
+      }
+      return report;
+    },
   };
 
   const buildAIPrompt = (userMessage) => {
@@ -830,6 +941,11 @@ AVAILABLE REPAIR ACTIONS (you can instruct these):
 - run_full_scan: Run complete diagnostic
 - fix_corrupt_entities: Remove corrupted entity data
 - set_openai_key(key): Set OpenAI API key for Oracle intelligence
+- deep_inspect_page(pageName): DEEP inspection — enters the core of a page, analyzes exports, checks for known issues like removed imports, API dependencies
+- fetch_source(filePath): Fetch and analyze source code from GitHub (e.g. src/pages/MovieMaker.jsx)
+- fix_navigation: Reset navigation state back to Home
+- inject_runtime_fix(fixName): Apply known runtime fixes (voice_settings, oracle_memory, css_reinject, error_boundary_reset)
+- test_all_pages: Test EVERY page in the app at once and report which fail
 
 ALL PAGES: ${ALL_PAGES.join(', ')}
 
@@ -950,12 +1066,24 @@ USER PROBLEM: ${userMessage}`;
       return `Running storage repair...\n\nACTION: fix_corrupt_entities\nACTION: reset_user\nACTION: reset_profile\n\nThis resets your user session and profile to defaults and removes any corrupted data entries.`;
     }
 
+    if (lower.includes('video') || lower.includes('movie') || lower.includes('generat')) {
+      return `Deep-scanning video/movie generation system...\n\nACTION: deep_inspect_page(MovieMaker)\nACTION: deep_inspect_page(VideoEditor)\n\nVideo generation requires:\n1. A working API connection (base44.functions or OpenAI)\n2. Proper media storage in localStorage\n3. Canvas/WebGL support for preview\n\nCommon issues:\n- No API key set → videos can't be generated server-side\n- base44.functions.invoke fails → needs fallback generation\n- MediaRecorder not supported in some browsers\n\nLet me inspect both pages and report what I find.`;
+    }
+
+    if (lower.includes('app maker') || lower.includes('inventor') || lower.includes('study') || lower.includes('comment')) {
+      return `Deep-scanning the App Maker / Inventor system...\n\nACTION: deep_inspect_page(Inventor)\n\nThe App Maker should:\n1. Study the target app's category, competitors, and reviews\n2. Analyze both positive AND negative comments/reviews\n3. Research the best-in-class apps in that category\n4. Generate a comprehensive development plan\n5. Build a production-ready app scaffold\n\nI'm inspecting the Inventor page core to identify what's missing or broken. If the AI isn't studying apps properly, it likely needs:\n- A web search integration for app research\n- Review analysis from app stores\n- Competitive analysis framework\n\nChecking now...`;
+    }
+
     if (lower.includes('page') || lower.includes('load') || lower.includes('crash') || lower.includes('error')) {
       const pageName = ALL_PAGES.find(p => lower.includes(p.toLowerCase()));
       if (pageName) {
-        return `Testing page "${pageName}"...\n\nACTION: test_page(${pageName})\n\nIf it fails, the page component has a code error or missing import. If it passes, the issue may be CSS/styling or data-related.`;
+        return `Deep-inspecting page "${pageName}"...\n\nACTION: deep_inspect_page(${pageName})\nACTION: test_page(${pageName})\n\nI'm entering the core of this page to analyze its exports, dependencies, and potential issues.`;
       }
-      return `I can test any specific page for you. Which page is having problems?\n\nAvailable pages: ${ALL_PAGES.slice(0, 15).join(', ')}... and ${ALL_PAGES.length - 15} more.\n\nTell me the page name and I'll run a targeted test.`;
+      return `I can deep-inspect any page. Which one is broken?\n\nI'll enter the core of the page, analyze its code, check dependencies, and identify the root cause.\n\nAvailable pages: ${ALL_PAGES.slice(0, 15).join(', ')}... and ${ALL_PAGES.length - 15} more.\n\nOr say "test all pages" and I'll scan every single one.`;
+    }
+
+    if (lower.includes('test all') || lower.includes('scan all') || lower.includes('every page')) {
+      return `Running deep scan on ALL ${ALL_PAGES.length} pages...\n\nACTION: test_all_pages\n\nThis will test every page in the app and report which ones fail to load. After that, I can deep-inspect any failing pages.`;
     }
 
     if (lower.includes('mic') || lower.includes('voice') || lower.includes('speech') || lower.includes('listen')) {

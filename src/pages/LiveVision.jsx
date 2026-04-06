@@ -128,115 +128,88 @@ Be detailed, helpful, and focus on practical information.`,
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-amber-50 via-yellow-100 to-amber-200">
-      <div className="relative z-10 min-h-screen flex flex-col p-6">
-        <div className="mb-6">
-          <Button variant="ghost" className="text-gray-800 hover:bg-white/40" onClick={() => window.history.back()}>
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back
-          </Button>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#e2e8f0', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(6,182,212,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><ArrowLeft size={20} /></button>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#06b6d4,#22d3ee,#67e8f9)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Live Vision</div>
+              <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>AI CAMERA • OBJECT DETECTION • REAL-TIME</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {cameraActive && <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'neonPulse 1.5s infinite', boxShadow: '0 0 8px rgba(239,68,68,0.5)' }} />}
+            <span style={{ color: cameraActive ? '#ef4444' : '#475569', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 600 }}>{cameraActive ? 'LIVE' : 'STANDBY'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px', maxWidth: '900px', margin: '0 auto', width: '100%' }}>
+        {/* Camera viewport */}
+        <div style={{ position: 'relative', borderRadius: '18px', overflow: 'hidden', background: 'rgba(6,6,16,0.9)', border: '1px solid rgba(6,182,212,0.1)', minHeight: '420px', flex: 1, marginBottom: '16px' }}>
+          {cameraActive ? (
+            <>
+              <video ref={videoRef} autoPlay playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              {/* Scanner overlay */}
+              <div style={{ position: 'absolute', inset: 0, border: '2px solid rgba(6,182,212,0.15)', borderRadius: '18px', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', top: '20px', left: '20px', width: '40px', height: '40px', borderTop: '3px solid #22d3ee', borderLeft: '3px solid #22d3ee', borderRadius: '4px 0 0 0' }} />
+                <div style={{ position: 'absolute', top: '20px', right: '20px', width: '40px', height: '40px', borderTop: '3px solid #22d3ee', borderRight: '3px solid #22d3ee', borderRadius: '0 4px 0 0' }} />
+                <div style={{ position: 'absolute', bottom: '20px', left: '20px', width: '40px', height: '40px', borderBottom: '3px solid #22d3ee', borderLeft: '3px solid #22d3ee', borderRadius: '0 0 0 4px' }} />
+                <div style={{ position: 'absolute', bottom: '20px', right: '20px', width: '40px', height: '40px', borderBottom: '3px solid #22d3ee', borderRight: '3px solid #22d3ee', borderRadius: '0 0 4px 0' }} />
+              </div>
+              {analyzing && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                  <Loader2 style={{ width: '48px', height: '48px', color: '#22d3ee', animation: 'spinLoader 1s linear infinite' }} />
+                  <span style={{ color: '#67e8f9', fontWeight: 600, fontSize: '0.9rem' }}>Oracle is analyzing...</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '420px', gap: '12px' }}>
+              <Camera style={{ width: '56px', height: '56px', color: '#1e293b' }} />
+              <span style={{ color: '#334155', fontSize: '0.85rem', fontWeight: 600 }}>Camera standby</span>
+              <span style={{ color: '#1e293b', fontSize: '0.7rem' }}>Tap below to activate</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <Eye className="w-20 h-20 mx-auto mb-4 text-amber-600" />
-            <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-yellow-600 mb-4">
-              Live Vision
-            </h1>
-            <p className="text-xl text-gray-700">Let Oracle see what you see</p>
+        {/* Controls */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+          {!cameraActive ? (
+            <button onClick={startCamera} style={{ flex: 1, height: '54px', borderRadius: '14px', border: 'none', background: 'linear-gradient(135deg,#06b6d4,#0891b2)', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              <Camera size={20} /> Start Camera
+            </button>
+          ) : (
+            <>
+              <button onClick={captureAndAnalyze} disabled={analyzing} style={{ flex: 1, height: '54px', borderRadius: '14px', border: 'none', background: analyzing ? 'rgba(139,92,246,0.15)' : 'linear-gradient(135deg,#8b5cf6,#a855f7)', color: '#fff', fontWeight: 700, fontSize: '0.95rem', cursor: analyzing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', opacity: analyzing ? 0.5 : 1 }}>
+                <Eye size={20} /> Analyze Now
+              </button>
+              <button onClick={stopCamera} style={{ padding: '0 24px', height: '54px', borderRadius: '14px', border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)', color: '#f87171', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+                Stop
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Response */}
+        {response && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            style={{ background: 'rgba(6,6,16,0.85)', borderRadius: '18px', padding: '24px', border: '1px solid rgba(6,182,212,0.1)', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <Eye style={{ width: '18px', height: '18px', color: '#22d3ee' }} />
+              <span style={{ fontSize: '0.7rem', color: '#06b6d4', fontFamily: 'monospace', letterSpacing: '0.1em' }}>ORACLE ANALYSIS</span>
+            </div>
+            <div style={{ color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.7 }}>
+              <ReactMarkdown>{response}</ReactMarkdown>
+            </div>
           </motion.div>
+        )}
 
-          <Card className="w-full bg-gray-900/80 border-cyan-500/50">
-            <CardContent className="p-6 space-y-6">
-              {/* Camera View */}
-              <div className="relative bg-black rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
-                {cameraActive ? (
-                  <>
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="w-full h-full"
-                    />
-                    {analyzing && (
-                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <div className="text-center">
-                          <Loader2 className="w-12 h-12 text-cyan-400 animate-spin mx-auto mb-4" />
-                          <p className="text-white">Oracle is analyzing...</p>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-full min-h-[400px]">
-                    <div className="text-center">
-                      <Camera className="w-20 h-20 text-gray-500 mx-auto mb-4" />
-                      <p className="text-gray-400">Camera is off</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Controls */}
-              <div className="flex gap-3">
-                {!cameraActive ? (
-                  <Button
-                    onClick={startCamera}
-                    className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white h-14 text-lg"
-                  >
-                    <Camera className="w-5 h-5 mr-2" />
-                    Start Camera
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      onClick={captureAndAnalyze}
-                      disabled={analyzing}
-                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-14 text-lg"
-                    >
-                      <Eye className="w-5 h-5 mr-2" />
-                      Analyze Now
-                    </Button>
-                    <Button
-                      onClick={stopCamera}
-                      variant="outline"
-                      className="text-white border-gray-600 hover:bg-red-600/20 h-14"
-                    >
-                      Stop
-                    </Button>
-                  </>
-                )}
-              </div>
-
-              {/* Response */}
-              {response && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <Card className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 border-cyan-500">
-                    <CardContent className="p-4">
-                      <h3 className="text-cyan-300 font-bold mb-3 flex items-center gap-2">
-                        <Eye className="w-5 h-5" />
-                        Oracle's Analysis
-                      </h3>
-                      <div className="text-white prose prose-invert max-w-none">
-                        <ReactMarkdown>{response}</ReactMarkdown>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-            </CardContent>
-          </Card>
-
-          <p className="text-gray-600 text-sm text-center mt-6 max-w-2xl">
-            Use Live Vision for real-time visual assistance, object identification, safety assessments, and contextual guidance
-          </p>
+        <div style={{ textAlign: 'center', padding: '8px 0', color: '#1e293b', fontSize: '0.7rem' }}>
+          Real-time visual assistance • Object identification • Safety assessments
         </div>
       </div>
     </div>

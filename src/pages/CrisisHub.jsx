@@ -213,7 +213,7 @@ export default function CrisisHub() {
   // ─── Fake call overlay ───
   if (fakeCallActive && fakeCallCaller) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 to-black flex flex-col items-center justify-center p-6">
+      <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center">
           <div className="w-24 h-24 rounded-full bg-white/10 mx-auto mb-6 flex items-center justify-center">
             <Phone className="w-12 h-12 text-green-400" />
@@ -237,25 +237,29 @@ export default function CrisisHub() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-950 via-rose-950 to-black p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-7 h-7 text-red-400" />
-          <div>
-            <h1 className="text-2xl font-bold text-white">Crisis Hub</h1>
-            <p className="text-red-300 text-sm">Emergency Tools & Personal Safety</p>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#e2e8f0', padding: '0' }}>
+      {/* Header */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(239,68,68,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><Shield size={24} style={{ color: '#ef4444' }} /></button>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#ef4444,#f97316,#fbbf24)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Crisis Hub</div>
+              <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>SOS \u2022 FAKE CALL \u2022 WITNESS \u2022 CONTACTS</div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '16px 20px 120px' }}>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1">
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: 'rgba(6,6,16,0.6)', borderRadius: '14px', padding: '4px', border: '1px solid rgba(239,68,68,0.06)' }}>
           {TABS.map(t => {
             const Icon = t.icon;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs transition-all ${tab === t.id ? 'bg-red-600 text-white' : 'text-white/40 hover:text-white/60'}`}>
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '10px 4px', borderRadius: '11px', fontSize: '0.7rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.25s', background: tab === t.id ? 'linear-gradient(135deg,rgba(239,68,68,0.2),rgba(249,115,22,0.15))' : 'transparent', color: tab === t.id ? '#fca5a5' : '#475569', boxShadow: tab === t.id ? '0 0 16px rgba(239,68,68,0.15)' : 'none' }}>
                 <Icon className="w-4 h-4" />
                 {t.label}
               </button>

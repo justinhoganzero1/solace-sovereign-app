@@ -314,7 +314,7 @@ export default function MarketingHub() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#06060f', padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#000', padding: '24px', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>

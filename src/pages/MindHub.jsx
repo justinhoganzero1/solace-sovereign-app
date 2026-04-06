@@ -261,25 +261,29 @@ export default function MindHub() {
   const batteryLabel = socialBattery > 60 ? 'Energized' : socialBattery > 30 ? 'Managing' : 'Need Recharge';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <Brain className="w-7 h-7 text-purple-400" />
-          <div>
-            <h1 className="text-2xl font-bold text-white">Mind Hub</h1>
-            <p className="text-purple-300 text-sm">Focus, Habits & Mental Tools</p>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#e2e8f0', padding: '0' }}>
+      {/* Header */}
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(99,102,241,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><Brain size={24} style={{ color: '#818cf8' }} /></button>
+            <div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#818cf8,#a78bfa,#c084fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Mind Hub</div>
+              <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>FOCUS • HABITS • MENTAL TOOLS</div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '16px 20px 120px' }}>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-white/5 rounded-xl p-1">
+        <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: 'rgba(6,6,16,0.6)', borderRadius: '14px', padding: '4px', border: '1px solid rgba(99,102,241,0.06)' }}>
           {TABS.map(t => {
             const Icon = t.icon;
             return (
               <button key={t.id} onClick={() => setTab(t.id)}
-                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg text-xs transition-all ${tab === t.id ? 'bg-purple-600 text-white' : 'text-white/40 hover:text-white/60'}`}>
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', padding: '10px 4px', borderRadius: '11px', fontSize: '0.7rem', fontWeight: 600, border: 'none', cursor: 'pointer', transition: 'all 0.25s', background: tab === t.id ? 'linear-gradient(135deg,rgba(99,102,241,0.2),rgba(168,85,247,0.15))' : 'transparent', color: tab === t.id ? '#a5b4fc' : '#475569', boxShadow: tab === t.id ? '0 0 16px rgba(99,102,241,0.15)' : 'none' }}>
                 <Icon className="w-4 h-4" />
                 {t.label}
               </button>

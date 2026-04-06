@@ -61,196 +61,111 @@ export default function Profile() {
     }
   };
 
+  const P = {
+    page: { minHeight: '100vh', background: '#000', color: '#e2e8f0' },
+    hdr: { padding: '16px 24px', borderBottom: '1px solid rgba(139,92,246,0.12)', background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(20px)', position: 'sticky', top: 0, zIndex: 20 },
+    section: { background: 'rgba(6,6,16,0.85)', border: '1px solid rgba(139,92,246,0.08)', borderRadius: '18px', padding: '24px', marginBottom: '16px' },
+    row: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px', borderRadius: '14px', background: 'rgba(10,10,25,0.6)', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '10px' },
+    label: { fontSize: '0.7rem', fontFamily: 'monospace', letterSpacing: '0.1em', marginBottom: '8px' },
+    genderBtn: (active) => ({ flex: 1, padding: '18px 12px', borderRadius: '14px', border: `2px solid ${active ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.06)'}`, background: active ? 'rgba(139,92,246,0.12)' : 'rgba(6,6,16,0.5)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.25s' }),
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-900 via-black to-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading profile...</div>
+      <div style={{ ...P.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#8b5cf6', fontSize: '0.9rem', fontFamily: 'monospace' }}>Loading profile...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-900 via-black to-gray-900 p-6">
-      <div className="max-w-3xl mx-auto">
-        <Button variant="ghost" className="text-white mb-6 hover:bg-white/20" onClick={() => window.history.back()}>
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          Back to Home
-        </Button>
+    <div style={P.page}>
+      <div style={P.hdr}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}><ArrowLeft size={20} /></button>
+          <div>
+            <div style={{ fontSize: '1.3rem', fontWeight: 800, background: 'linear-gradient(135deg,#8b5cf6,#ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>My Profile</div>
+            <div style={{ color: '#475569', fontSize: '0.65rem', fontFamily: 'monospace', letterSpacing: '0.1em' }}>IDENTITY • PREFERENCES • PRIVACY</div>
+          </div>
+        </div>
+      </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {/* Profile Header */}
-          <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-2 border-yellow-300/50 mb-6">
-            <CardHeader>
-              <CardTitle className="text-3xl text-amber-900 flex items-center">
-                <User className="w-8 h-8 mr-3" />
-                My Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 bg-amber-50 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span className="font-medium">Name:</span>
-                  <span>{user?.full_name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Email:</span>
-                  <span>{user?.email}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Role:</span>
-                  <span className="capitalize bg-blue-100 px-3 py-1 rounded">{user?.role}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div style={{ maxWidth: '700px', margin: '0 auto', padding: '24px 20px 120px' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          {/* Account Info */}
+          <div style={P.section}>
+            <div style={{ ...P.label, color: '#8b5cf6' }}>ACCOUNT</div>
+            <div style={P.row}><span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>Name</span><span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.85rem' }}>{user?.full_name}</span></div>
+            <div style={P.row}><span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>Email</span><span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.85rem' }}>{user?.email}</span></div>
+            <div style={P.row}><span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>Role</span><span style={{ padding: '4px 12px', borderRadius: '8px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#93c5fd', fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}>{user?.role}</span></div>
+          </div>
 
           {/* Preferences */}
-          <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-2 border-purple-300/50 mb-6">
-            <CardHeader>
-              <CardTitle className="text-2xl text-purple-900 flex items-center">
-                <Palette className="w-6 h-6 mr-2" />
-                Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-lg">Oracle Gender</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant={profile?.oracle_gender === 'female' ? 'default' : 'outline'}
-                    className="h-20"
-                    onClick={() => updateProfile({ oracle_gender: 'female' })}
-                    disabled={saving}
-                  >
-                    <div className="text-3xl mb-1">👩</div>
-                    <div>Female</div>
-                  </Button>
-                  <Button
-                    variant={profile?.oracle_gender === 'male' ? 'default' : 'outline'}
-                    className="h-20"
-                    onClick={() => updateProfile({ oracle_gender: 'male' })}
-                    disabled={saving}
-                  >
-                    <div className="text-3xl mb-1">👨</div>
-                    <div>Male</div>
-                  </Button>
-                </div>
+          <div style={P.section}>
+            <div style={{ ...P.label, color: '#a855f7' }}>PREFERENCES</div>
+            <div style={{ ...P.label, color: '#c4b5fd', marginTop: '8px' }}>ORACLE GENDER</div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <div style={P.genderBtn(profile?.oracle_gender === 'female')} onClick={() => !saving && updateProfile({ oracle_gender: 'female' })}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>👩</div>
+                <div style={{ color: profile?.oracle_gender === 'female' ? '#c4b5fd' : '#64748b', fontWeight: 600, fontSize: '0.82rem' }}>Female</div>
               </div>
+              <div style={P.genderBtn(profile?.oracle_gender === 'male')} onClick={() => !saving && updateProfile({ oracle_gender: 'male' })}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>👨</div>
+                <div style={{ color: profile?.oracle_gender === 'male' ? '#c4b5fd' : '#64748b', fontWeight: 600, fontSize: '0.82rem' }}>Male</div>
+              </div>
+            </div>
 
-              <div className="space-y-3">
-                <Label className="text-lg">Preferred Language</Label>
-                <Select
-                  value={profile?.language || 'en'}
-                  onValueChange={(value) => updateProfile({ language: value })}
-                  disabled={saving}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                    <SelectItem value="fr">French</SelectItem>
-                    <SelectItem value="de">German</SelectItem>
-                    <SelectItem value="it">Italian</SelectItem>
-                    <SelectItem value="pt">Portuguese</SelectItem>
-                    <SelectItem value="ru">Russian</SelectItem>
-                    <SelectItem value="zh">Chinese</SelectItem>
-                    <SelectItem value="ja">Japanese</SelectItem>
-                    <SelectItem value="ar">Arabic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div style={{ ...P.label, color: '#c4b5fd' }}>LANGUAGE</div>
+            <div style={{ marginBottom: '16px' }}>
+              <Select value={profile?.language || 'en'} onValueChange={(v) => updateProfile({ language: v })} disabled={saving}>
+                <SelectTrigger style={{ background: 'rgba(10,10,25,0.7)', border: '1px solid rgba(139,92,246,0.12)', borderRadius: '12px', color: '#c4b5fd' }}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[['en','English'],['es','Spanish'],['fr','French'],['de','German'],['it','Italian'],['pt','Portuguese'],['ru','Russian'],['zh','Chinese'],['ja','Japanese'],['ar','Arabic']].map(([c,n]) => <SelectItem key={c} value={c}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-3">
-                <Label className="text-lg">Tier Level</Label>
-                <Select
-                  value={profile?.tier_level || 'free'}
-                  onValueChange={(value) => updateProfile({ tier_level: value })}
-                  disabled={saving}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free</SelectItem>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div style={{ ...P.label, color: '#c4b5fd' }}>TIER</div>
+            <div style={{ marginBottom: '16px' }}>
+              <Select value={profile?.tier_level || 'free'} onValueChange={(v) => updateProfile({ tier_level: v })} disabled={saving}>
+                <SelectTrigger style={{ background: 'rgba(10,10,25,0.7)', border: '1px solid rgba(139,92,246,0.12)', borderRadius: '12px', color: '#c4b5fd' }}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[['free','Free'],['basic','Basic'],['premium','Premium'],['enterprise','Enterprise']].map(([c,n]) => <SelectItem key={c} value={c}>{n}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                <div>
-                  <Label className="text-lg">Auto-Play Voice</Label>
-                  <p className="text-sm text-gray-600">Automatically play voice responses</p>
-                </div>
-                <Switch
-                  checked={profile?.auto_play_voice || false}
-                  onCheckedChange={(checked) => updateProfile({ auto_play_voice: checked })}
-                  disabled={saving}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <div style={P.row}>
+              <div><div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.85rem' }}>Auto-Play Voice</div><div style={{ color: '#475569', fontSize: '0.72rem' }}>Speak responses automatically</div></div>
+              <Switch checked={profile?.auto_play_voice || false} onCheckedChange={(c) => updateProfile({ auto_play_voice: c })} disabled={saving} />
+            </div>
+          </div>
 
-          {/* Safety Settings */}
-          <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-2 border-green-300/50">
-            <CardHeader>
-              <CardTitle className="text-2xl text-green-900 flex items-center">
-                <Shield className="w-6 h-6 mr-2" />
-                Safety & Privacy
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                <div>
-                  <Label className="text-lg">Safety Guardian Mode</Label>
-                  <p className="text-sm text-gray-600">Enhanced content filtering</p>
-                </div>
-                <Switch
-                  checked={profile?.safety_mode || true}
-                  onCheckedChange={(checked) => updateProfile({ safety_mode: checked })}
-                  disabled={saving}
-                />
-              </div>
+          {/* Safety */}
+          <div style={{ ...P.section, borderColor: 'rgba(34,197,94,0.08)' }}>
+            <div style={{ ...P.label, color: '#22c55e' }}>SAFETY & PRIVACY</div>
+            <div style={P.row}>
+              <div><div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.85rem' }}>Safety Guardian</div><div style={{ color: '#475569', fontSize: '0.72rem' }}>Enhanced content filtering</div></div>
+              <Switch checked={profile?.safety_mode || true} onCheckedChange={(c) => updateProfile({ safety_mode: c })} disabled={saving} />
+            </div>
 
-              <div className="space-y-3">
-                <Label className="text-lg">Age Category</Label>
-                <Select
-                  value={profile?.age_category || ''}
-                  onValueChange={(value) => updateProfile({ age_category: value })}
-                  disabled={saving}
-                >
-                  <SelectTrigger className="bg-white">
-                    <SelectValue placeholder="Select age category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="under_16">Under 16</SelectItem>
-                    <SelectItem value="age_16_18">Age 16-18</SelectItem>
-                    <SelectItem value="age_18_plus">Age 18+</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div style={{ ...P.label, color: '#4ade80', marginTop: '12px' }}>AGE CATEGORY</div>
+            <div style={{ marginBottom: '16px' }}>
+              <Select value={profile?.age_category || ''} onValueChange={(v) => updateProfile({ age_category: v })} disabled={saving}>
+                <SelectTrigger style={{ background: 'rgba(10,10,25,0.7)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '12px', color: '#86efac' }}><SelectValue placeholder="Select age category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="under_16">Under 16</SelectItem>
+                  <SelectItem value="age_16_18">Age 16-18</SelectItem>
+                  <SelectItem value="age_18_plus">Age 18+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg">
-                <div>
-                  <Label className="text-lg">Interpreter Mode</Label>
-                  <p className="text-sm text-gray-600">Enable AI translation features</p>
-                </div>
-                <Switch
-                  checked={profile?.interpreter_mode || false}
-                  onCheckedChange={(checked) => updateProfile({ interpreter_mode: checked })}
-                  disabled={saving}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <div style={P.row}>
+              <div><div style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '0.85rem' }}>Interpreter Mode</div><div style={{ color: '#475569', fontSize: '0.72rem' }}>AI translation features</div></div>
+              <Switch checked={profile?.interpreter_mode || false} onCheckedChange={(c) => updateProfile({ interpreter_mode: c })} disabled={saving} />
+            </div>
+          </div>
         </motion.div>
       </div>
     </div>

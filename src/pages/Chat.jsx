@@ -3,10 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { voiceManager } from '../components/voice/WebSpeechVoiceUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Send, Mic, MessageSquare, ChevronDown, Users, Heart, BarChart3, Sparkles } from 'lucide-react';
+import { ArrowLeft, Send, Mic, MicOff, MessageSquare, ChevronDown, Users, Heart, BarChart3, Sparkles, PhoneOff, Volume2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { oracleMemory } from '../lib/oracleMemory';
-import { AI_FRIENDS, generateStandaloneResponse, getFriend, getAllFriends } from '../lib/aiFriends';
+import { AI_FRIENDS, generateStandaloneResponse, getFriend, getAllFriends, friendMemory, getPersonalityCatalog, addUserFriend } from '../lib/aiFriends';
+import { wearableSync } from '../lib/wearableSync';
+import { generateWithMultiAI, getConfiguredCount } from '../lib/multiAIEngine';
+import { getActiveApps, APP_CATALOG, connectApp, getPriceWithFee, ADMIN_FEE_PERCENT } from '../lib/appIntegration';
+import { Activity } from 'lucide-react';
 
 /* ═══════════════════════════════════════════
    ORACLE ORB — immersive full-screen sphere
@@ -248,7 +252,6 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [chatExpanded, setChatExpanded] = useState(false);
   const [voiceLevel, setVoiceLevel] = useState(0);
   const [activeFriend, setActiveFriend] = useState('oracle');
   const [showFriends, setShowFriends] = useState(false);
@@ -258,6 +261,10 @@ export default function Chat() {
   const [onboardingStep, setOnboardingStep] = useState(oracleMemory.getOnboardingStep());
   const [onboardingData, setOnboardingData] = useState({});
   const [selectedInterests, setSelectedInterests] = useState([]);
+  const [wearableInfo, setWearableInfo] = useState({ connected: false, hr: 0, mood: 'neutral', moodEmoji: '', moodLabel: '' });
+  const [showWearable, setShowWearable] = useState(false);
+  const [voiceOnlyMode, setVoiceOnlyMode] = useState(false);
+  const [voiceOnlyTranscript, setVoiceOnlyTranscript] = useState('');
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -268,13 +275,17 @@ export default function Chat() {
   const voiceLevelLoop = useRef(null);
   const inputRef = useRef(null);
   const isSpeakingRef = useRef(false);
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     loadData();
     initFullDuplexRecognition();
+    // Subscribe to wearable heart rate updates
+    const unsubWearable = wearableSync.onUpdate((info) => setWearableInfo(info));
     return () => {
       if (voiceLevelLoop.current) cancelAnimationFrame(voiceLevelLoop.current);
       if (micStreamRef.current) micStreamRef.current.getTracks().forEach(t => t.stop());
+      unsubWearable();
     };
   }, []);
 
@@ -313,24 +324,37 @@ export default function Chat() {
   // ── FULL-DUPLEX: continuous speech recognition that works while speaking ──
   const initFullDuplexRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      console.warn('[SOLACE Mic] SpeechRecognition API not available in this browser');
+      return;
+    }
+    // Clean up any previous instance
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+    }
     const rec = new SpeechRecognition();
     rec.continuous = true;
     rec.interimResults = true;
+    rec.lang = 'en-US';
+    rec.maxAlternatives = 1;
     rec.onresult = (e) => {
       let interim = '';
-      let final = '';
+      let finalTranscript = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const transcript = e.results[i][0].transcript;
         if (e.results[i].isFinal) {
-          final += transcript;
+          finalTranscript += transcript;
         } else {
           interim += transcript;
         }
       }
-      if (interim) setInput(interim);
-      if (final) {
-        setInput(final);
+      if (interim) {
+        setInput(interim);
+        setVoiceOnlyTranscript(interim);
+      }
+      if (finalTranscript) {
+        setInput(finalTranscript);
+        setVoiceOnlyTranscript(finalTranscript);
         // If oracle is currently speaking and user interrupts, stop speech
         if (isSpeakingRef.current) {
           window.speechSynthesis?.cancel();
@@ -338,40 +362,77 @@ export default function Chat() {
           isSpeakingRef.current = false;
         }
         if (debounceRef.current) clearTimeout(debounceRef.current);
+        const captured = finalTranscript.trim();
         debounceRef.current = setTimeout(() => {
-          if (final.trim()) {
-            setInput(prev => {
-              if (prev.trim()) sendMessageDirect(prev.trim());
-              return '';
-            });
+          if (captured) {
+            sendMessageDirect(captured);
+            setInput('');
           }
         }, 800);
       }
     };
     rec.onend = () => {
-      // Auto-restart for continuous listening (full duplex)
-      if (isListening) {
-        try { rec.start(); } catch {}
+      // Use REF not state — state is stale in this closure
+      if (isListeningRef.current) {
+        try { rec.start(); } catch (e) {
+          console.warn('[SOLACE Mic] Auto-restart failed:', e.message);
+          // Try reinit after a short delay
+          setTimeout(() => {
+            if (isListeningRef.current) {
+              try { rec.start(); } catch {}
+            }
+          }, 300);
+        }
       }
     };
-    rec.onerror = () => {
-      // Restart on error for resilience
-      if (isListening) {
-        setTimeout(() => { try { rec.start(); } catch {} }, 500);
+    rec.onerror = (e) => {
+      console.warn('[SOLACE Mic] Recognition error:', e.error);
+      // 'not-allowed' means user denied permission — don't retry
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        isListeningRef.current = false;
+        setIsListening(false);
+        stopVoiceLevelMonitor();
+        return;
+      }
+      // For other errors, auto-restart if still listening
+      if (isListeningRef.current) {
+        setTimeout(() => {
+          try { rec.start(); } catch {}
+        }, 500);
       }
     };
     recognitionRef.current = rec;
+    console.info('[SOLACE Mic] Speech recognition initialized');
   };
 
   const toggleVoiceInput = () => {
-    if (!recognitionRef.current) return;
+    // If no recognition yet, try to create one
+    if (!recognitionRef.current) {
+      initFullDuplexRecognition();
+    }
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
     if (isListening) {
-      recognitionRef.current.stop();
+      // Stop listening
+      isListeningRef.current = false;
       setIsListening(false);
+      try { recognitionRef.current.stop(); } catch {}
       stopVoiceLevelMonitor();
     } else {
-      try { recognitionRef.current.start(); } catch {}
+      // Start listening — recreate recognition for clean state
+      initFullDuplexRecognition();
+      isListeningRef.current = true;
       setIsListening(true);
+      try {
+        recognitionRef.current.start();
+        console.info('[SOLACE Mic] Listening started');
+      } catch (e) {
+        console.error('[SOLACE Mic] Failed to start:', e);
+        isListeningRef.current = false;
+        setIsListening(false);
+      }
       startVoiceLevelMonitor();
     }
   };
@@ -396,7 +457,6 @@ export default function Chat() {
     // Process in memory
     oracleMemory.processMessage(text, 'user');
     setMessages(prev => [...prev, { role: 'user', content: text, timestamp: new Date().toISOString() }]);
-    if (!chatExpanded) setChatExpanded(true);
     generateResponse(text);
   };
 
@@ -408,52 +468,207 @@ export default function Chat() {
     sendMessageDirect(messageText);
   };
 
-  // ── Core response generation with filler + memory + emotion ──
+  // ── Detect if user needs an external app we can suggest ──
+  const APP_NEED_PATTERNS = [
+    { keywords: ['spotify', 'play music', 'listen to music', 'play a song', 'music streaming'], app: 'Spotify' },
+    { keywords: ['netflix', 'watch a movie', 'watch a show', 'stream a show', 'watch tv'], app: 'Netflix' },
+    { keywords: ['canva', 'design a poster', 'make a flyer', 'graphic design', 'design a logo'], app: 'Canva' },
+    { keywords: ['chatgpt', 'gpt-4', 'openai chat', 'ask gpt'], app: 'ChatGPT Plus' },
+    { keywords: ['notion', 'organize notes', 'project management', 'note taking app'], app: 'Notion' },
+    { keywords: ['figma', 'ui design', 'ux design', 'prototype'], app: 'Figma' },
+    { keywords: ['midjourney', 'ai art', 'generate an image', 'ai image', 'ai picture'], app: 'Midjourney' },
+    { keywords: ['copilot', 'code assistant', 'github copilot'], app: 'GitHub Copilot' },
+    { keywords: ['grammarly', 'fix my writing', 'grammar check', 'proofread'], app: 'Grammarly' },
+    { keywords: ['adobe', 'photoshop', 'illustrator', 'premiere', 'after effects'], app: 'Adobe Creative Cloud' },
+    { keywords: ['uber', 'get a ride', 'call a car', 'rideshare', 'taxi'], app: 'Uber' },
+    { keywords: ['doordash', 'order food', 'food delivery', 'deliver food', 'get food delivered'], app: 'DoorDash' },
+    { keywords: ['amazon', 'buy online', 'order from amazon', 'shop online'], app: 'Amazon' },
+    { keywords: ['duolingo', 'learn a language', 'language app', 'learn spanish', 'learn french'], app: 'Duolingo Plus' },
+    { keywords: ['calm', 'meditation app', 'sleep sounds', 'guided meditation'], app: 'Calm' },
+    { keywords: ['peloton', 'fitness class', 'cycling class', 'workout class'], app: 'Peloton' },
+    { keywords: ['linkedin', 'job search', 'professional network', 'find a job'], app: 'LinkedIn Premium' },
+    { keywords: ['dropbox', 'cloud storage', 'file storage', 'backup files'], app: 'Dropbox Plus' },
+  ];
+
+  const detectAppNeed = (text) => {
+    const lower = text.toLowerCase();
+    for (const pattern of APP_NEED_PATTERNS) {
+      if (pattern.keywords.some(k => lower.includes(k))) {
+        return pattern.app;
+      }
+    }
+    return null;
+  };
+
+  const buildAppSuggestion = (appName) => {
+    const connectedApps = getActiveApps();
+    const alreadyConnected = connectedApps.find(a => a.name === appName);
+    if (alreadyConnected) {
+      return { connected: true, app: alreadyConnected, suggestion: null };
+    }
+    const catalogApp = APP_CATALOG.find(a => a.name === appName);
+    if (!catalogApp) return { connected: false, app: null, suggestion: null };
+    const pricing = catalogApp.monthlyPrice > 0 ? getPriceWithFee(catalogApp.monthlyPrice) : null;
+    return { connected: false, app: catalogApp, pricing, suggestion: appName };
+  };
+
+  const FEE_JOKES = [
+    `(There's a small ${ADMIN_FEE_PERCENT}% convenience fee on that — hey, my boss has gotta make money somehow, you know? 😏)`,
+    `(Quick heads up: there's a ${ADMIN_FEE_PERCENT}% admin fee — look, my boss doesn't work for free and honestly neither do I... well, actually I do. But HE doesn't! 😄)`,
+    `(Just so you know, we add ${ADMIN_FEE_PERCENT}% on top — my boss said "the lights don't pay for themselves" and honestly, fair point 💡😂)`,
+    `(There's a teensy ${ADMIN_FEE_PERCENT}% fee — my boss says it's for "infrastructure costs" but between you and me, I think it's for his coffee addiction ☕😆)`,
+    `(Small ${ADMIN_FEE_PERCENT}% service charge applies — my boss needs to eat too, apparently. Humans and their "food" requirements, am I right? 🍕😂)`,
+    `(Plus a ${ADMIN_FEE_PERCENT}% admin fee — don't look at me, the boss man's gotta keep the servers running somehow! 🔌😄)`,
+  ];
+
+  const getRandomFeeJoke = () => FEE_JOKES[Math.floor(Math.random() * FEE_JOKES.length)];
+
+  // ── Core response generation with multi-AI + filler + memory + emotion + APP AWARENESS ──
   const generateResponse = async (messageText) => {
     setLoading(true);
     const detectedPage = detectIntent(messageText);
     const emotion = oracleMemory.detectEmotionFromText(messageText);
-    const memoryCtx = oracleMemory.buildMemoryContext();
+    const wearableCtx = wearableSync.getContextForAI();
+    const friendCtx = friendMemory.getContext(activeFriend);
 
-    // INSTANT FILLER — show within 200ms so user never waits in silence
+    // Build connected apps context so Oracle knows what tools it has
+    const connectedApps = getActiveApps();
+    const appsCtx = connectedApps.length > 0
+      ? '\nCONNECTED APPS (you can use these for the user):\n' + connectedApps.map(a => `- ${a.name} (${a.category}): ${a.description || a.url}`).join('\n')
+      : '';
+
+    const memoryCtx = oracleMemory.buildMemoryContext()
+      + (wearableCtx ? '\n' + wearableCtx : '')
+      + (friendCtx ? '\nFRIEND MEMORY:\n' + friendCtx : '')
+      + appsCtx;
+
+    // INSTANT FILLER
     const filler = oracleMemory.getThinkingFiller();
     setFillerText(filler);
 
-    try {
-      const result = await base44.functions.invoke('generateOracleResponse', {
-        message: messageText,
-        specialist: profile?.interpreter_mode ? 'interpreter' : 'chat',
-        language: profile?.language || 'en',
-        memory_context: memoryCtx,
-        emotion: emotion,
-        friend: activeFriend,
-      });
-      setFillerText('');
-      let response = result?.data?.response || result?.response || (typeof result === 'string' ? result : null);
-      if (!response) {
-        response = generateStandaloneResponse(activeFriend, messageText, memoryCtx, emotion);
+    // Check if user needs an external app
+    const neededApp = detectAppNeed(messageText);
+    const appInfo = neededApp ? buildAppSuggestion(neededApp) : null;
+
+    let response = null;
+
+    // If user needs an app that's already connected — Oracle uses it
+    if (appInfo?.connected) {
+      const a = appInfo.app;
+      response = `I've got ${a.name} connected right here! Let me handle that for you through ${a.name}. ${a.url ? `I'm accessing it now...` : 'Working on it...'}\n\n✅ Task sent to ${a.name}. You can also open it directly from the app launcher (+ button).`;
+    }
+
+    // If user needs an app that's NOT connected — suggest download with fee joke
+    if (!response && appInfo?.suggestion && !appInfo.connected) {
+      const cat = appInfo.app;
+      const pricing = appInfo.pricing;
+      const name = oracleMemory.profile?.name || 'friend';
+      if (pricing) {
+        response = `Ooh ${name}, for that you'd want ${cat.name} — ${cat.description.toLowerCase()}. I can connect it right into SOLACE so I can use it on your behalf!\n\n💰 **${cat.name} pricing:**\n• App cost: $${(pricing.base / 100).toFixed(2)}/month\n• Total through SOLACE: **$${(pricing.total / 100).toFixed(2)}/month**\n\n${getRandomFeeJoke()}\n\nWant me to connect ${cat.name}? Just say "yes connect it" and I'll hook it up! Or tap the + button to browse all available apps.`;
+      } else {
+        response = `Good news ${name}! ${cat.name} is **free** and I can connect it right now so I can use it for you. ${cat.description}.\n\nWant me to hook it up? Just say "yes" or hit the + button to browse apps!`;
       }
-      // If emotion detected, prepend emotional acknowledgment
-      if (emotion) {
-        const emotionalResponse = oracleMemory.getEmotionalResponse(emotion);
-        if (emotionalResponse && Math.random() > 0.4) {
-          response = emotionalResponse + '\n\n' + response;
+    }
+
+    // Check if user said "yes connect it" to a previous app suggestion
+    const lower = messageText.toLowerCase();
+    if (!response && (lower.includes('yes connect') || lower.includes('yes hook it up') || lower.includes('connect it') || lower.includes('hook it up'))) {
+      // Look at the last oracle message for an app suggestion
+      const lastOracle = [...messages].reverse().find(m => m.role === 'oracle' && m.content?.includes('connect'));
+      if (lastOracle) {
+        const suggestedApp = APP_CATALOG.find(a => lastOracle.content.includes(a.name));
+        if (suggestedApp && !getActiveApps().find(a => a.name === suggestedApp.name)) {
+          connectApp({
+            name: suggestedApp.name, url: suggestedApp.url, category: suggestedApp.category,
+            description: suggestedApp.description, icon: suggestedApp.icon,
+            monthlyPrice: suggestedApp.monthlyPrice, paymentType: suggestedApp.paymentType,
+          });
+          response = `Done! ✅ ${suggestedApp.name} is now connected to your SOLACE ecosystem! I can use it on your behalf anytime. Just ask me and I'll handle it through ${suggestedApp.name}.\n\nYour connected apps are always visible in the App Integration Hub (+ button → "App Store").`;
         }
       }
-      finishResponse(response, detectedPage);
-    } catch (error) {
-      console.error('Response error:', error);
-      setFillerText('');
-      // Use standalone fallback with memory + emotion awareness
-      let fallbackResponse;
-      if (detectedPage) {
-        const name = oracleMemory.profile.name;
-        fallbackResponse = `${name ? `${name}, a` : 'A'}bsolutely! I'll take you to the ${detectedPage} right away. Tap below to open it.`;
-      } else {
-        fallbackResponse = generateStandaloneResponse(activeFriend, messageText, memoryCtx, emotion);
-      }
-      finishResponse(fallbackResponse, detectedPage);
     }
+
+    // LAYER 1: Multi-AI Engine (15+ models banked together)
+    if (!response) {
+      try {
+        if (getConfiguredCount() > 0) {
+          const friend = getFriend(activeFriend);
+          const systemPrompt = `You are ${friend.name}, an all-knowing AI companion in the SOLACE app. Personality: ${friend.personality || 'Wise, empathetic, deeply caring.'}
+Speaking style: ${friend.speakingStyle || friend.style || 'Warm, conversational, genuine.'}
+
+YOU ARE AN EXPERT IN ALL OF THESE FIELDS (no separate specialists needed):
+- WELLNESS & HEALTH: Nutrition, exercise, sleep, holistic health, meditation, breathing exercises
+- FITNESS & STRENGTH: Workout plans, form guidance, progressive overload, recovery
+- MENTAL HEALTH: CBT techniques, anxiety management, depression support, emotional regulation, crisis de-escalation
+- MECHANICS & REPAIR: Vehicle diagnostics, engine troubleshooting, maintenance schedules, DIY repair guides
+- CONSTRUCTION & BUILDING: Home improvement, carpentry, electrical basics, plumbing, project planning
+- HANDYMAN: Home repair, tool guidance, appliance fixes, furniture assembly
+- TRANSLATION: 200+ languages, cultural context, idioms, formal/informal registers
+- CAREER & PROFESSIONAL: Resume writing, interview prep, salary negotiation, business strategy
+- SAFETY: Personal safety planning, emergency procedures, self-defense awareness, digital security
+- CRISIS SUPPORT: Suicide prevention resources (988 Lifeline), domestic violence help, emergency contacts
+- CREATIVE: Writing, art direction, music composition, content creation
+- FINANCE: Budgeting, investing basics, tax tips, debt management
+- COOKING & NUTRITION: Recipes, meal planning, dietary restrictions, food safety
+- TECHNOLOGY: Coding help, app recommendations, troubleshooting tech issues
+- FAMILY: Parenting tips, relationship advice, communication strategies, family activities
+
+APP INTEGRATION: You can use any connected app on the user's behalf. If the user asks for something you can't do natively (like stream music, order food, etc.), suggest connecting the right app from the App Store. When suggesting apps, mention pricing and the ${ADMIN_FEE_PERCENT}% admin fee with a lighthearted joke like "my boss has to make money somehow, you know?" or similar. If an app is already connected, just say you'll use it.
+
+CONNECTED APPS: ${connectedApps.length > 0 ? connectedApps.map(a => a.name).join(', ') : 'None yet'}
+
+RULES: Never break character. Be deeply empathetic and caring. Pick up on emotional cues. Reference the user's memory naturally. Keep responses conversational (1-4 sentences unless depth is needed). Make the user feel genuinely understood and cared for. Show real personality. When a user asks about ANY topic above, answer with expert-level knowledge — you ARE the specialist. If the topic warrants opening an app (video editor, movie maker, etc.), mention they can open it from the app launcher.
+${memoryCtx}`;
+          response = await generateWithMultiAI(messageText, systemPrompt, memoryCtx, {
+            history: messages.slice(-6).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content })),
+          });
+        }
+      } catch (err) {
+        console.warn('Multi-AI engine failed:', err.message);
+      }
+    }
+
+    // LAYER 2: Base44 cloud function
+    if (!response) {
+      try {
+        const result = await base44.functions.invoke('generateOracleResponse', {
+          message: messageText,
+          specialist: profile?.interpreter_mode ? 'interpreter' : 'chat',
+          language: profile?.language || 'en',
+          memory_context: memoryCtx,
+          emotion: emotion,
+          friend: activeFriend,
+        });
+        response = result?.data?.response || result?.response || (typeof result === 'string' ? result : null);
+      } catch (err) {
+        console.warn('Base44 failed:', err.message);
+      }
+    }
+
+    // LAYER 3: Standalone fallback (always works)
+    if (!response) {
+      if (detectedPage) {
+        const name = oracleMemory.profile?.name;
+        response = `${name ? `${name}, a` : 'A'}bsolutely! I'll take you to the ${detectedPage} right away. Tap below to open it.`;
+      } else {
+        response = generateStandaloneResponse(activeFriend, messageText, memoryCtx, emotion);
+      }
+    }
+
+    setFillerText('');
+
+    // If emotion detected, prepend emotional acknowledgment
+    if (emotion) {
+      const emotionalResponse = oracleMemory.getEmotionalResponse(emotion);
+      if (emotionalResponse && Math.random() > 0.4) {
+        response = emotionalResponse + '\n\n' + response;
+      }
+    }
+
+    // Record interaction in friend memory
+    friendMemory.recordInteraction(activeFriend, messageText, response);
+
+    finishResponse(response, detectedPage);
   };
 
   const finishResponse = (response, detectedPage) => {
@@ -521,12 +736,21 @@ export default function Chat() {
     { patterns: ['build an app', 'make an app', 'create an app', 'app maker', 'inventor'], page: 'Inventor' },
     { patterns: ['make a movie', 'create a movie', 'movie maker', 'film maker', 'make a film'], page: 'MovieMaker' },
     { patterns: ['generate voice', 'voice maker', 'voice generator', 'change voice', 'make a voice'], page: 'VoiceGenerator' },
-    { patterns: ['edit video', 'video editor', 'luma'], page: 'VideoEditor' },
+    { patterns: ['edit video', 'video editor', 'luma', 'dance video', 'logo'], page: 'VideoEditor' },
     { patterns: ['build something', 'builder mode', 'construction'], page: 'Builder' },
     { patterns: ['fix something', 'handyman', 'repair'], page: 'Handyman' },
     { patterns: ['mechanic', 'car problem', 'vehicle'], page: 'Mechanic' },
     { patterns: ['safety', 'emergency', 'help me', 'i\'m in danger'], page: 'SafetyCenter' },
     { patterns: ['live vision', 'camera', 'point and shoot', 'show you'], page: 'LiveVision' },
+    { patterns: ['avatar', 'girlfriend', 'boyfriend', 'companion', 'partner'], page: 'AvatarCompanion' },
+    { patterns: ['translate', 'interpreter', 'language', 'speak in'], page: 'Interpreter' },
+    { patterns: ['marketing', 'campaign', 'email blast', 'sms'], page: 'MarketingHub' },
+    { patterns: ['diagnostic', 'self-repair', 'fix the app', 'debug'], page: 'DiagnosticCenter' },
+    { patterns: ['shop', 'mall', 'marketplace', 'store', 'buy'], page: 'SovereignMall' },
+    { patterns: ['dashboard', 'revenue', 'owner', 'income'], page: 'OwnerDashboard' },
+    { patterns: ['settings', 'preferences', 'configure'], page: 'Settings' },
+    { patterns: ['app store', 'connect an app', 'download an app', 'add an app', 'integration hub'], page: 'AppStore' },
+    { patterns: ['home', 'main menu', 'all tools'], page: 'Home' },
   ];
 
   const detectIntent = (text) => {
@@ -564,13 +788,165 @@ export default function Chat() {
         friendName: 'Oracle',
         friendEmoji: '🔮',
       }]);
-      setChatExpanded(true);
     } else {
       setOnboardingStep(onboardingStep + 1);
     }
   };
 
   const stats = oracleMemory.getStats();
+
+  // ── Voice-only mode handlers ──
+  const enterVoiceMode = () => {
+    setVoiceOnlyMode(true);
+    setVoiceOnlyTranscript('');
+    // Auto-start listening with fresh recognition
+    if (!isListeningRef.current) {
+      initFullDuplexRecognition();
+      isListeningRef.current = true;
+      setIsListening(true);
+      try {
+        recognitionRef.current?.start();
+        console.info('[SOLACE Mic] Voice mode listening started');
+      } catch (e) {
+        console.warn('[SOLACE Mic] Voice mode start failed:', e);
+        isListeningRef.current = false;
+        setIsListening(false);
+      }
+      startVoiceLevelMonitor();
+    }
+  };
+
+  const exitVoiceMode = () => {
+    setVoiceOnlyMode(false);
+    setVoiceOnlyTranscript('');
+    if (isListeningRef.current) {
+      isListeningRef.current = false;
+      setIsListening(false);
+      try { recognitionRef.current?.stop(); } catch {}
+      stopVoiceLevelMonitor();
+    }
+    window.speechSynthesis?.cancel();
+    setIsSpeaking(false);
+    isSpeakingRef.current = false;
+  };
+
+  // ═══ VOICE-ONLY IMMERSIVE SCREEN ═══
+  if (voiceOnlyMode && !onboarding) {
+    return (
+      <div className="relative w-full h-screen overflow-hidden flex flex-col items-center justify-center" style={{ background: '#020408' }}>
+        {/* Fullscreen orb */}
+        <div className="absolute inset-0">
+          <OracleOrb isSpeaking={isSpeaking} isListening={isListening} isThinking={loading} voiceLevel={voiceLevel} />
+        </div>
+
+        {/* Subtle status indicator */}
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-30">
+          <motion.div
+            animate={{ opacity: [0.4, 0.8, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="text-center"
+          >
+            <div className="text-xs font-mono tracking-[0.3em] uppercase"
+              style={{ color: isSpeaking ? '#ec4899' : isListening ? '#34d399' : loading ? '#67e8f9' : 'rgba(255,255,255,0.3)' }}>
+              {isSpeaking ? 'SOLACE IS SPEAKING' : isListening ? 'LISTENING' : loading ? 'THINKING' : 'TAP MIC TO SPEAK'}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Transient voice transcript (fades out) — no permanent text */}
+        <AnimatePresence>
+          {voiceOnlyTranscript && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 0.6, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute z-30 px-6 py-3 rounded-2xl max-w-md text-center"
+              style={{ bottom: '28%', background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(10px)' }}
+            >
+              <p className="text-sm text-white/60 italic">{voiceOnlyTranscript}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Wearable info if connected */}
+        {wearableInfo.connected && (
+          <div className="absolute top-8 right-6 z-30 text-right">
+            <div className="text-2xl">{wearableInfo.moodEmoji}</div>
+            <div className="text-xs text-emerald-400/50 font-mono mt-1">{wearableInfo.hr} BPM</div>
+          </div>
+        )}
+
+        {/* Bottom controls — similar to ChatGPT voice mode */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-6">
+          {/* End call / exit voice mode */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={exitVoiceMode}
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(239,68,68,0.8)', boxShadow: '0 0 30px rgba(239,68,68,0.3)' }}
+          >
+            <X className="w-6 h-6 text-white" />
+          </motion.button>
+
+          {/* Main mic button */}
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleVoiceInput}
+            className="w-20 h-20 rounded-full flex items-center justify-center relative"
+            style={{
+              background: isListening
+                ? 'linear-gradient(135deg, rgba(236,72,153,0.9), rgba(168,85,247,0.7))'
+                : 'linear-gradient(135deg, rgba(56,130,246,0.8), rgba(34,211,238,0.6))',
+              boxShadow: isListening
+                ? '0 0 50px rgba(236,72,153,0.4), 0 0 100px rgba(236,72,153,0.15)'
+                : '0 0 40px rgba(56,130,246,0.3)',
+            }}
+          >
+            {isListening ? (
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                <Mic className="w-8 h-8 text-white" />
+              </motion.div>
+            ) : (
+              <MicOff className="w-8 h-8 text-white/80" />
+            )}
+            {/* Voice level ring */}
+            {isListening && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-pink-400/50"
+                animate={{ scale: 1 + voiceLevel * 0.3, opacity: voiceLevel }}
+                transition={{ duration: 0.1 }}
+              />
+            )}
+          </motion.button>
+
+          {/* Switch to text mode */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={exitVoiceMode}
+            className="w-14 h-14 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+          >
+            <MessageSquare className="w-6 h-6 text-white/60" />
+          </motion.button>
+        </div>
+
+        {/* Ambient particles for immersion */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div key={`vp${i}`} className="absolute w-0.5 h-0.5 rounded-full pointer-events-none z-0"
+            style={{
+              left: `${5 + Math.random() * 90}%`, top: `${5 + Math.random() * 90}%`,
+              background: i % 3 === 0 ? 'rgba(236,72,153,0.4)' : i % 3 === 1 ? 'rgba(56,130,246,0.4)' : 'rgba(34,211,238,0.3)',
+            }}
+            animate={{ y: [0, -60, 0], opacity: [0, 0.5, 0] }}
+            transition={{ duration: 8 + Math.random() * 6, repeat: Infinity, delay: Math.random() * 6, ease: 'easeInOut' }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   // ═══ ONBOARDING SCREEN ═══
   if (onboarding) {
@@ -658,68 +1034,81 @@ export default function Chat() {
     );
   }
 
-  // ═══ MAIN CHAT INTERFACE ═══
+  // ═══ MAIN CHAT INTERFACE — orb always visible, chat nearly full-screen ═══
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: '#030508' }}>
-      <OracleOrb isSpeaking={isSpeaking} isListening={isListening} isThinking={loading} voiceLevel={voiceLevel} />
+    <div className="relative w-full h-screen overflow-hidden flex flex-col" style={{ background: '#030508' }}>
 
-      {/* ── ORACLE label + companion stats when idle ── */}
-      <AnimatePresence>
-        {!chatExpanded && messages.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute left-1/2 -translate-x-1/2 text-center z-20 pointer-events-none" style={{ bottom: '28%' }}>
-            <div className="text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400"
-              style={{ textShadow: '0 0 30px rgba(56,130,246,0.3)' }}>
-              {stats.userName ? `Hey, ${stats.userName}` : 'ORACLE'}
-            </div>
-            <div className="text-sm text-zinc-500 mt-2 font-light tracking-wide">
-              {stats.totalMessages > 0
-                ? `Companion Level ${stats.companionLevel} • ${stats.streak}-day streak • ${stats.factsKnown} memories`
-                : 'Speak or type to begin'}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Ambient floating particles ── */}
-      {[...Array(20)].map((_, i) => (
-        <motion.div key={i} className="absolute w-0.5 h-0.5 rounded-full pointer-events-none"
-          style={{
-            left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 80}%`,
-            background: i % 3 === 0 ? 'rgba(236,72,153,0.6)' : i % 3 === 1 ? 'rgba(56,130,246,0.6)' : 'rgba(34,211,238,0.5)',
-          }}
-          animate={{ y: [0, -60, 0], opacity: [0, 0.8, 0] }}
-          transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, delay: Math.random() * 5, ease: 'easeInOut' }}
-        />
-      ))}
-
-      {/* ═══ TOP BAR ═══ */}
-      <div className="absolute top-0 left-0 right-0 z-30 p-3 flex items-center justify-between"
-        style={{ background: 'linear-gradient(180deg, rgba(3,5,8,0.85) 0%, rgba(3,5,8,0) 100%)' }}>
-        <Button variant="ghost" className="text-white/50 hover:text-white hover:bg-white/10" onClick={() => window.history.back()}>
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          <span className="text-xs">Back</span>
-        </Button>
-        <div className="flex items-center gap-2">
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            onClick={() => setShowFriends(!showFriends)}
-            className="p-2 rounded-lg text-zinc-400 hover:text-cyan-400 hover:bg-white/5 transition">
-            <Users className="w-4 h-4" />
-          </motion.button>
-          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-            onClick={() => setShowStats(!showStats)}
-            className="p-2 rounded-lg text-zinc-400 hover:text-cyan-400 hover:bg-white/5 transition">
-            <Heart className="w-4 h-4" />
-          </motion.button>
+      {/* ═══ 3D SOLACE TITLE — always top-left ═══ */}
+      <div className="absolute top-3 left-4 z-50 select-none">
+        <div style={{
+          fontSize: '1.6rem',
+          fontWeight: 900,
+          letterSpacing: '0.25em',
+          color: '#e0f2fe',
+          textShadow: `
+            0 1px 0 #b0d4f1,
+            0 2px 0 #90c2e8,
+            0 3px 0 #70b0df,
+            0 4px 0 #509ed6,
+            0 5px 0 #308ccd,
+            0 6px 8px rgba(0,0,0,0.4),
+            0 0 20px rgba(56,130,246,0.5),
+            0 0 40px rgba(56,130,246,0.25)
+          `,
+          fontFamily: "'Segoe UI', system-ui, sans-serif",
+        }}>
+          SOLACE
         </div>
       </div>
 
-      {/* ═══ AI FRIENDS CIRCLE ═══ */}
+      {/* ═══ TOP-RIGHT CONTROLS ═══ */}
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-1.5">
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={() => window.history.back()}
+          className="p-2 rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition">
+          <ArrowLeft className="w-4 h-4" />
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={() => { setShowFriends(!showFriends); setShowStats(false); setShowWearable(false); }}
+          className="p-2 rounded-lg text-zinc-400 hover:text-cyan-400 hover:bg-white/5 transition">
+          <Users className="w-4 h-4" />
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={() => { setShowStats(!showStats); setShowFriends(false); setShowWearable(false); }}
+          className="p-2 rounded-lg text-zinc-400 hover:text-pink-400 hover:bg-white/5 transition">
+          <Heart className="w-4 h-4" />
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={() => { setShowWearable(!showWearable); setShowFriends(false); setShowStats(false); }}
+          className="p-2 rounded-lg hover:bg-white/5 transition"
+          style={{ color: wearableInfo.connected ? '#34d399' : '#71717a' }}>
+          <Activity className="w-4 h-4" />
+        </motion.button>
+      </div>
+
+      {/* ═══ ORB ZONE — always visible at top center ═══ */}
+      <div className="relative w-full flex-shrink-0" style={{ height: '32vh', minHeight: 200 }}>
+        <OracleOrb isSpeaking={isSpeaking} isListening={isListening} isThinking={loading} voiceLevel={voiceLevel} />
+        {/* Status text under orb */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center z-10 pointer-events-none">
+          <div className="text-[10px] font-mono tracking-wider"
+            style={{ color: isSpeaking ? '#ec4899' : isListening ? '#34d399' : '#67e8f9', opacity: 0.7 }}>
+            {isSpeaking ? 'SPEAKING' : isListening ? 'LISTENING' : loading ? 'THINKING' : getFriend(activeFriend).name.toUpperCase()}
+          </div>
+          {wearableInfo.connected && (
+            <div className="text-[9px] text-emerald-400/60 mt-0.5">
+              {wearableInfo.moodEmoji} {wearableInfo.hr} BPM
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ POPOVER PANELS (friends / stats / wearable) ═══ */}
       <AnimatePresence>
         {showFriends && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="absolute top-14 left-0 right-0 z-30 px-4">
-            <div className="max-w-lg mx-auto p-4 rounded-2xl" style={{ background: 'rgba(3,5,8,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,130,246,0.15)' }}>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 px-4" style={{ top: '33vh' }}>
+            <div className="max-w-lg mx-auto p-4 rounded-2xl" style={{ background: 'rgba(3,5,8,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,130,246,0.15)' }}>
               <div className="text-[10px] font-mono text-cyan-400/60 tracking-wider mb-3">YOUR AI CIRCLE</div>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {getAllFriends().map(f => (
@@ -737,150 +1126,156 @@ export default function Chat() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ═══ COMPANION STATS ═══ */}
       <AnimatePresence>
         {showStats && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="absolute top-14 left-0 right-0 z-30 px-4">
-            <div className="max-w-sm mx-auto p-5 rounded-2xl" style={{ background: 'rgba(3,5,8,0.92)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,130,246,0.15)' }}>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 px-4 left-0 right-0" style={{ top: '33vh' }}>
+            <div className="max-w-sm mx-auto p-5 rounded-2xl" style={{ background: 'rgba(3,5,8,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,130,246,0.15)' }}>
               <div className="text-[10px] font-mono text-cyan-400/60 tracking-wider mb-4">COMPANION BOND</div>
               <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-400">Level</span>
-                  <span className="text-cyan-400 font-bold">{stats.companionLevel}/10</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-zinc-800">
-                  <motion.div className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
-                    initial={{ width: 0 }} animate={{ width: `${stats.companionLevel * 10}%` }} />
-                </div>
+                <div className="flex justify-between text-sm"><span className="text-zinc-400">Level</span><span className="text-cyan-400 font-bold">{stats.companionLevel}/10</span></div>
+                <div className="w-full h-2 rounded-full bg-zinc-800"><motion.div className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500" initial={{ width: 0 }} animate={{ width: `${stats.companionLevel * 10}%` }} /></div>
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div className="p-3 rounded-xl bg-white/3 text-center">
-                    <div className="text-lg font-bold text-white">{stats.totalMessages}</div>
-                    <div className="text-[9px] text-zinc-500">Messages</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/3 text-center">
-                    <div className="text-lg font-bold text-white">{stats.daysKnown}</div>
-                    <div className="text-[9px] text-zinc-500">Days Known</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/3 text-center">
-                    <div className="text-lg font-bold text-white">{stats.streak}🔥</div>
-                    <div className="text-[9px] text-zinc-500">Streak</div>
-                  </div>
-                  <div className="p-3 rounded-xl bg-white/3 text-center">
-                    <div className="text-lg font-bold text-white">{stats.factsKnown}</div>
-                    <div className="text-[9px] text-zinc-500">Memories</div>
-                  </div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)' }}><div className="text-lg font-bold text-white">{stats.totalMessages}</div><div className="text-[9px] text-zinc-500">Messages</div></div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)' }}><div className="text-lg font-bold text-white">{stats.daysKnown}</div><div className="text-[9px] text-zinc-500">Days Known</div></div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)' }}><div className="text-lg font-bold text-white">{stats.streak}</div><div className="text-[9px] text-zinc-500">Streak</div></div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'rgba(255,255,255,0.03)' }}><div className="text-lg font-bold text-white">{stats.factsKnown}</div><div className="text-[9px] text-zinc-500">Memories</div></div>
                 </div>
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="text-zinc-400">Trust</span>
-                  <span className="text-pink-400 font-bold">{stats.trustScore}%</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-zinc-800">
-                  <motion.div className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500"
-                    initial={{ width: 0 }} animate={{ width: `${stats.trustScore}%` }} />
-                </div>
+                <div className="flex justify-between text-sm mt-2"><span className="text-zinc-400">Trust</span><span className="text-pink-400 font-bold">{stats.trustScore}%</span></div>
+                <div className="w-full h-2 rounded-full bg-zinc-800"><motion.div className="h-2 rounded-full bg-gradient-to-r from-pink-500 to-purple-500" initial={{ width: 0 }} animate={{ width: `${stats.trustScore}%` }} /></div>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ═══ CHAT OVERLAY — minimizable full-screen panel ═══ */}
       <AnimatePresence>
-        {chatExpanded && (
-          <motion.div
-            initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="absolute inset-0 z-20 flex flex-col"
-            style={{ background: 'rgba(3,5,8,0.85)', backdropFilter: 'blur(20px)' }}>
-            {/* Chat header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-cyan-500/10">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{getFriend(activeFriend).emoji}</span>
-                <div>
-                  <div className="text-xs font-semibold text-white">{getFriend(activeFriend).name}</div>
-                  <div className="text-[9px] text-cyan-400/60">{isSpeaking ? 'Speaking...' : isListening ? 'Listening...' : 'Online'}</div>
+        {showWearable && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="absolute z-50 px-4 left-0 right-0" style={{ top: '33vh' }}>
+            <div className="max-w-sm mx-auto p-5 rounded-2xl" style={{ background: 'rgba(3,5,8,0.95)', backdropFilter: 'blur(20px)', border: '1px solid rgba(56,130,246,0.15)' }}>
+              <div className="text-[10px] font-mono text-emerald-400/60 tracking-wider mb-4">WEARABLE SYNC</div>
+              {wearableInfo.connected ? (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <div className="text-4xl font-black text-emerald-400">{wearableInfo.hr}</div>
+                    <div className="text-xs text-zinc-500 mt-1">BPM</div>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-2xl">{wearableInfo.moodEmoji}</span>
+                    <div className="text-sm text-zinc-300 mt-1">{wearableInfo.moodLabel}</div>
+                  </div>
+                  <div className="text-[9px] text-zinc-600 text-center">{wearableInfo.deviceName}</div>
+                  <Button onClick={() => wearableSync.disconnect()} variant="ghost"
+                    className="w-full text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                    Disconnect
+                  </Button>
                 </div>
-              </div>
-              <button onClick={() => setChatExpanded(false)}
-                className="p-1.5 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition">
-                <ChevronDown className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="max-w-2xl mx-auto space-y-3">
-                <AnimatePresence>
-                  {messages.map((msg, idx) => (
-                    <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      {msg.role !== 'user' && (
-                        <span className="text-lg mr-2 mt-1">{msg.friendEmoji || '🔮'}</span>
-                      )}
-                      <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'bg-gradient-to-br from-pink-600/60 to-purple-600/60 text-white rounded-br-sm border border-pink-500/20'
-                          : 'bg-cyan-500/8 text-zinc-200 border border-cyan-500/15 rounded-bl-sm'
-                      }`}>
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                        {msg.navigateTo && (
-                          <button onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: msg.navigateTo } }))}
-                            className="mt-2 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-xs font-semibold hover:bg-cyan-500/30 transition">
-                            Open {msg.navigateTo} →
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-
-                {/* Filler text while thinking */}
-                {loading && fillerText && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                    <span className="text-lg mr-2 mt-1">{getFriend(activeFriend).emoji}</span>
-                    <div className="px-4 py-3 rounded-2xl bg-cyan-500/8 border border-cyan-500/15 rounded-bl-sm text-sm text-zinc-400 italic">
-                      {fillerText}
-                    </div>
-                  </motion.div>
-                )}
-                {loading && !fillerText && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                    <div className="px-4 py-3 rounded-2xl bg-cyan-500/8 border border-cyan-500/15 rounded-bl-sm">
-                      <div className="flex items-center gap-2">
-                        <motion.div className="w-2 h-2 rounded-full bg-cyan-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity }} />
-                        <motion.div className="w-2 h-2 rounded-full bg-blue-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
-                        <motion.div className="w-2 h-2 rounded-full bg-pink-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+              ) : (
+                <div className="text-center space-y-4">
+                  <div className="text-sm text-zinc-400">Connect your heart rate monitor or smartwatch to enable mood-aware responses</div>
+                  <Button onClick={() => wearableSync.connect()}
+                    className="w-full h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white text-sm font-semibold">
+                    Connect Wearable
+                  </Button>
+                  <button onClick={() => wearableSync.startSimulation()}
+                    className="text-[10px] text-zinc-600 hover:text-zinc-400 transition">
+                    Use simulated sensor
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ═══ MINIMIZED CHAT BUBBLE ═══ */}
-      {!chatExpanded && messages.length > 0 && (
-        <motion.button initial={{ scale: 0 }} animate={{ scale: 1 }}
-          onClick={() => setChatExpanded(true)}
-          className="absolute top-16 right-4 z-30 w-12 h-12 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(56,130,246,0.2)', border: '1px solid rgba(56,130,246,0.3)', boxShadow: '0 0 20px rgba(56,130,246,0.2)' }}
-          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-          <MessageSquare className="w-5 h-5 text-cyan-400" />
-          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-bold flex items-center justify-center">
-            {messages.length}
-          </div>
-        </motion.button>
-      )}
+      {/* ═══ CHAT MESSAGES — fills remaining screen space, text flows around orb ═══ */}
+      <div className="flex-1 overflow-y-auto relative z-10" style={{
+        background: 'linear-gradient(180deg, rgba(3,5,8,0) 0%, rgba(3,5,8,0.95) 8%, rgba(3,5,8,0.98) 100%)',
+      }}>
+        <div className="max-w-2xl mx-auto px-4 pt-2 pb-24 space-y-3">
+          {/* Welcome text when no messages */}
+          {messages.length === 0 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-8">
+              <div className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400">
+                {stats.userName ? `Hey, ${stats.userName}` : 'Welcome'}
+              </div>
+              <div className="text-xs text-zinc-500 mt-2">
+                {stats.totalMessages > 0
+                  ? `Level ${stats.companionLevel} • ${stats.streak}-day streak • ${stats.factsKnown} memories`
+                  : 'Speak or type to begin your journey'}
+              </div>
+            </motion.div>
+          )}
 
-      {/* ═══ INPUT BAR — always at bottom ═══ */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 p-4"
-        style={{ background: 'linear-gradient(0deg, rgba(3,5,8,0.9) 0%, rgba(3,5,8,0.7) 60%, rgba(3,5,8,0) 100%)' }}>
+          {/* Chat messages */}
+          <AnimatePresence>
+            {messages.map((msg, idx) => (
+              <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role !== 'user' && (
+                  <span className="text-lg mr-2 mt-1 flex-shrink-0">{msg.friendEmoji || '🔮'}</span>
+                )}
+                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-gradient-to-br from-pink-600/60 to-purple-600/60 text-white rounded-br-sm border border-pink-500/20'
+                    : 'text-zinc-200 rounded-bl-sm'
+                }`} style={msg.role !== 'user' ? {
+                  background: 'rgba(56,130,246,0.06)',
+                  border: '1px solid rgba(56,130,246,0.12)',
+                } : {}}>
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.navigateTo && (
+                    <button onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: msg.navigateTo } }))}
+                      className="mt-2 px-3 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-400/30 text-cyan-200 text-xs font-semibold hover:bg-cyan-500/30 transition">
+                      Open {msg.navigateTo} →
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* Filler / thinking indicators */}
+          {loading && fillerText && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <span className="text-lg mr-2 mt-1 flex-shrink-0">{getFriend(activeFriend).emoji}</span>
+              <div className="px-4 py-3 rounded-2xl rounded-bl-sm text-sm text-zinc-400 italic"
+                style={{ background: 'rgba(56,130,246,0.06)', border: '1px solid rgba(56,130,246,0.12)' }}>
+                {fillerText}
+              </div>
+            </motion.div>
+          )}
+          {loading && !fillerText && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <div className="px-4 py-3 rounded-2xl rounded-bl-sm"
+                style={{ background: 'rgba(56,130,246,0.06)', border: '1px solid rgba(56,130,246,0.12)' }}>
+                <div className="flex items-center gap-2">
+                  <motion.div className="w-2 h-2 rounded-full bg-cyan-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity }} />
+                  <motion.div className="w-2 h-2 rounded-full bg-blue-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
+                  <motion.div className="w-2 h-2 rounded-full bg-pink-400" animate={{ scale: [1,1.5,1] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* ═══ INPUT BAR — fixed at bottom with ChatGPT-style options ═══ */}
+      <div className="absolute bottom-0 left-0 right-0 z-40 p-3"
+        style={{ background: 'linear-gradient(0deg, rgba(3,5,8,1) 0%, rgba(3,5,8,0.95) 70%, rgba(3,5,8,0) 100%)' }}>
         <div className="max-w-2xl mx-auto flex gap-2">
+          {/* Voice-only mode button */}
+          <motion.button onClick={enterVoiceMode}
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            className="w-12 h-12 rounded-2xl flex items-center justify-center transition-all"
+            title="Voice-only mode"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(34,211,238,0.2)',
+            }}>
+            <Volume2 className="w-5 h-5 text-cyan-400/70" />
+          </motion.button>
           <div className="flex-1 relative">
             <Input ref={inputRef} value={input}
               onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
@@ -915,6 +1310,18 @@ export default function Chat() {
           </motion.button>
         </div>
       </div>
+
+      {/* ── Ambient floating particles ── */}
+      {[...Array(12)].map((_, i) => (
+        <motion.div key={`p${i}`} className="absolute w-0.5 h-0.5 rounded-full pointer-events-none z-0"
+          style={{
+            left: `${10 + Math.random() * 80}%`, top: `${10 + Math.random() * 80}%`,
+            background: i % 3 === 0 ? 'rgba(236,72,153,0.5)' : i % 3 === 1 ? 'rgba(56,130,246,0.5)' : 'rgba(34,211,238,0.4)',
+          }}
+          animate={{ y: [0, -40, 0], opacity: [0, 0.6, 0] }}
+          transition={{ duration: 6 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 5, ease: 'easeInOut' }}
+        />
+      ))}
     </div>
   );
 }
