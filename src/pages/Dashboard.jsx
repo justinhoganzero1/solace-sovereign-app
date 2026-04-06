@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import OracleBackground from '../components/OracleBackground';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { createPageUrl } from '../utils';
 import { 
   MessageSquare, Languages, Shield, Brain, Heart, Briefcase, 
   BookOpen, Music, Film, Palette, Code, Sparkles,
@@ -81,31 +79,29 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 place-items-center">
             {/* Main Chat with Oracle Widget */}
-            <Link to={createPageUrl('Chat')} className="col-span-2 md:col-span-1">
+            <div className="col-span-2 md:col-span-1" onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'Chat' } }))}>
               <div className="w-32 h-32 rounded-full bg-gradient-to-br from-yellow-400 via-yellow-300 to-orange-400 hover:from-yellow-300 hover:via-yellow-200 hover:to-orange-300 shadow-2xl flex flex-col items-center justify-center border-4 border-yellow-200/60 hover:border-yellow-100 transition-all hover:scale-110 cursor-pointer">
                 <MessageSquare className="w-8 h-8 text-black mb-2" />
                 <p className="text-black font-bold text-center text-sm">Chat Oracle</p>
               </div>
-            </Link>
+            </div>
 
             {/* Specialist Widgets */}
             {specialists.map((specialist) => (
-              <Link key={specialist.name} to={`${createPageUrl('SpecialistChat')}?specialist=${encodeURIComponent(specialist.name)}`}>
+              <div key={specialist.name} onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'SpecialistChat', specialist: specialist.name } }))}>
                 <div className={`w-32 h-32 rounded-full bg-gradient-to-r ${specialist.color} shadow-xl flex flex-col items-center justify-center border-4 border-white/30 hover:border-white/60 transition-all hover:scale-110 cursor-pointer`}>
                   <specialist.icon className="w-8 h-8 text-white mb-2" />
                   <p className="text-white font-bold text-center text-xs leading-tight px-2">{specialist.name}</p>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 
           <div className="mt-8 text-center">
-            <Link to={createPageUrl('AllSpecialists')}>
-              <Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 text-lg">
-                <Sparkles className="w-5 h-5 mr-2" />
-                View All 200+ Specialists
-              </Button>
-            </Link>
+            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-6 text-lg" onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'AllSpecialists' } }))}>
+              <Sparkles className="w-5 h-5 mr-2" />
+              View All 200+ Specialists
+            </Button>
           </div>
         </div>
       </div>

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { createPageUrl } from '../utils';
 import { Sparkles, MessageSquare, Zap, Languages, Settings, Shield, Trophy, Users, LogOut, GripHorizontal, BrainCircuit } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
@@ -159,11 +157,10 @@ export default function Home() {
                                       <Icon className="w-8 h-8 text-white" />
                                     </button>
                                   ) : (
-                                    <Link to={createPageUrl(widget.page, { appFace: widget.appFace, from: 'Home' })}>
-                                      <div className="rounded-full flex items-center justify-center border-2 transition-all shadow-lg w-24 h-24 bg-gradient-to-br from-yellow-400 via-yellow-300 to-orange-400 border-yellow-200 hover:scale-110">
-                                        <Icon className="w-8 h-8 text-black" />
-                                      </div>
-                                    </Link>
+                                    <div onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: widget.page } }))}
+                                      className="rounded-full flex items-center justify-center border-2 transition-all shadow-lg w-24 h-24 bg-gradient-to-br from-yellow-400 via-yellow-300 to-orange-400 border-yellow-200 hover:scale-110 cursor-pointer">
+                                      <Icon className="w-8 h-8 text-black" />
+                                    </div>
                                   )}
                                   <p className="text-center text-white font-semibold leading-tight text-sm max-w-20">
                                     {widget.label}

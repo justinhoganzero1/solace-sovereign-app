@@ -88,11 +88,11 @@ export default function SovereignMall() {
                 animate={{ opacity: 1, scale: 1, rotateY: 0 }}
                 transition={{ delay: idx * 0.15, type: 'spring' }}
               >
-                <Link to={createPageUrl(section.page)}>
-                  <motion.div
+                <motion.div
                     whileHover={{ y: -20, scale: 1.15, rotateY: 15 }}
                     whileTap={{ scale: 0.9 }}
-                    style={{ transformStyle: 'preserve-3d' }}
+                    style={{ transformStyle: 'preserve-3d', cursor: 'pointer' }}
+                    onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: section.page } }))}
                   >
                     <FuturisticOrb size="xl" glowColor={section.color}>
                       <div className="text-center p-4">
@@ -101,7 +101,6 @@ export default function SovereignMall() {
                       </div>
                     </FuturisticOrb>
                   </motion.div>
-                </Link>
               </motion.div>
             );
           })}

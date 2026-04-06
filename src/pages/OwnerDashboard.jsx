@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Users, DollarSign, TrendingUp, Settings, Shield, Database, Zap } from 'lucide-react';
 import { authSystem, OWNER_EMAIL } from '../lib/authorizationSystem';
 import { motion } from 'framer-motion';
@@ -91,12 +89,10 @@ export default function OwnerDashboard() {
             <Shield className="w-16 h-16 mx-auto mb-4 text-red-500" />
             <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
             <p className="text-red-300 mb-6">This dashboard is only accessible to the app owner.</p>
-            <Link to={createPageUrl('Home')}>
-              <Button className="bg-red-600 hover:bg-red-700">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Return to Home
-              </Button>
-            </Link>
+            <Button className="bg-red-600 hover:bg-red-700" onClick={() => window.history.back()}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Return to Home
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -113,12 +109,10 @@ export default function OwnerDashboard() {
             </h1>
             <p className="text-purple-300">Full system control and analytics</p>
           </div>
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-white hover:bg-white/20">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to App
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to App
+          </Button>
         </div>
 
         {/* Key Metrics */}
@@ -222,15 +216,13 @@ export default function OwnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-4">
-              <Link to={createPageUrl('Inventor', { appFace: 'inventor', from: 'OwnerDashboard' })}>
-                <Button className="w-full h-auto py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
-                  <div className="text-center">
-                    <Zap className="w-8 h-8 mx-auto mb-2" />
-                    <div className="font-bold">Build App Maker</div>
-                    <div className="text-xs opacity-80">Owner Only</div>
-                  </div>
-                </Button>
-              </Link>
+              <Button className="w-full h-auto py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'Inventor' } }))}>
+                <div className="text-center">
+                  <Zap className="w-8 h-8 mx-auto mb-2" />
+                  <div className="font-bold">Build App Maker</div>
+                  <div className="text-xs opacity-80">Owner Only</div>
+                </div>
+              </Button>
 
               <Button className="w-full h-auto py-6 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
                 <div className="text-center">

@@ -167,10 +167,10 @@ export default function AllSpecialists() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
                   >
-                    <Link to={`${createPageUrl('SpecialistChat')}?specialist=${encodeURIComponent(specialist.name)}`}>
-                      <motion.div
+                    <motion.div
                         whileHover={{ scale: 1.1, y: -5 }}
                         whileTap={{ scale: 0.95 }}
+                        onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'SpecialistChat', specialist: specialist.name } }))}
                         className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-900/90 to-yellow-900/90 backdrop-blur-md border-2 border-yellow-400/60 shadow-2xl hover:border-yellow-300 transition-all cursor-pointer flex flex-col items-center justify-center"
                       >
                         <div className="text-3xl mb-1">{specialist.emoji}</div>
@@ -178,7 +178,6 @@ export default function AllSpecialists() {
                           {specialist.name}
                         </p>
                       </motion.div>
-                    </Link>
                   </motion.div>
                 ))}
               </div>

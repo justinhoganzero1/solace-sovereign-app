@@ -8,8 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import VoiceSelectorComponent from '../components/voice/VoiceSelectorComponent';
 import { multilingualVoices } from '../lib/multilingualVoices';
@@ -120,12 +118,10 @@ export default function Settings() {
     <OracleBackground gender={profile?.oracle_gender || 'female'}>
       <div className="min-h-screen p-6">
         <div className="max-w-4xl mx-auto">
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-white mb-6 hover:bg-white/20">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-white mb-6 hover:bg-white/20" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Home
+          </Button>
 
           <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-2 border-yellow-300/50">
             <CardHeader>

@@ -4,8 +4,6 @@ import OracleBackground from '../components/OracleBackground';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Shield, AlertTriangle, CheckCircle, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { Badge } from '@/components/ui/badge';
 
 export default function Safety() {
@@ -71,12 +69,10 @@ export default function Safety() {
     <OracleBackground gender={profile?.oracle_gender || 'female'}>
       <div className="min-h-screen p-6">
         <div className="max-w-5xl mx-auto">
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-white mb-6 hover:bg-white/20">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Home
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-white mb-6 hover:bg-white/20" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Home
+          </Button>
 
           <Card className="bg-white/95 backdrop-blur-md shadow-2xl border-2 border-green-300/50 mb-6">
             <CardHeader>
@@ -133,11 +129,9 @@ export default function Safety() {
               </div>
 
               <div className="mt-6 text-center">
-                <Link to={createPageUrl('Settings')}>
-                  <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg">
-                    Configure Safety Settings
-                  </Button>
-                </Link>
+                <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg" onClick={() => window.dispatchEvent(new CustomEvent('solace-navigate', { detail: { page: 'Settings' } }))}>
+                  Configure Safety Settings
+                </Button>
               </div>
             </CardContent>
           </Card>
