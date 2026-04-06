@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, useNavigate } from 'react-router-dom'
-import FloatingOracleOrb from './components/FloatingOracleOrb'
+import OracleMaster from './components/OracleMaster'
 
 class PageErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -56,6 +56,8 @@ const ICONS = {
   community:  'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 11a4 4 0 100-8 4 4 0 000 8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75',
   crisis:     'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01',
   vision:     'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 12m-3 0a3 3 0 116 0 3 3 0 01-6 0',
+  diagnostic: 'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2 M9 18l1-3 M15 18l-1-3',
+  marketing:   'M22 2L11 13 M22 2l-7 20-4-9-9-4z',
 }
 
 const neonColors = [
@@ -89,17 +91,86 @@ const specialists = [
   { name: 'Community Hub', icon: 'community', desc: 'Social & community features', ci: 5 },
   { name: 'Crisis Hub', icon: 'crisis', desc: 'Emergency support system', ci: 6 },
   { name: 'Live Vision', icon: 'vision', desc: 'Camera & AR features', ci: 1 },
+  { name: 'Diagnostic Center', icon: 'diagnostic', desc: 'Self-diagnosing repair system', ci: 6, page: 'DiagnosticCenter' },
+  { name: 'Marketing Hub', icon: 'marketing', desc: 'SMS, Email, Voice & AI Campaigns', ci: 1, page: 'MarketingHub' },
 ]
 
 const ownerPages = [
   'AllSpecialists', 'Builder', 'Chat', 'CommunityHub', 'CrisisHub',
-  'Dashboard', 'DigitalMall', 'FamilyHub', 'Handyman', 'Home',
+  'Dashboard', 'DiagnosticCenter', 'DigitalMall', 'FamilyHub', 'Handyman', 'Home', 'MarketingHub',
   'Interpreter', 'Inventor', 'LiveVision', 'Mechanic', 'MediaLibrary',
   'MindHub', 'MovieMaker', 'OracleCouncil', 'OracleTrainingCenter',
   'OwnerDashboard', 'PhygitalHub', 'ProfessionalHub', 'Profile',
   'SafetyCenter', 'Settings', 'SovereignEmpire', 'SpecialistChat',
   'TierSystem', 'TitanHeart', 'VideoEditor', 'VoiceGenerator', 'WellnessCenter'
 ]
+
+// ═══════════════════════════════════════════
+// AUTO-RECOVERY SYSTEM
+// Monitors for crashes, memory leaks, stuck states
+// ═══════════════════════════════════════════
+function initAutoRecovery() {
+  if (window.__solaceRecoveryActive) return;
+  window.__solaceRecoveryActive = true;
+
+  let consecutiveErrors = 0;
+  const MAX_ERRORS_BEFORE_RESET = 5;
+  const HEALTH_CHECK_INTERVAL = 30000; // 30s
+
+  // Global error handler
+  window.addEventListener('error', (e) => {
+    consecutiveErrors++;
+    console.warn(`[SOLACE Recovery] Error #${consecutiveErrors}: ${e.message}`);
+    if (consecutiveErrors >= MAX_ERRORS_BEFORE_RESET) {
+      console.warn('[SOLACE Recovery] Too many errors — triggering soft reset');
+      consecutiveErrors = 0;
+      try {
+        // Clear potentially corrupt data
+        const keys = Object.keys(localStorage);
+        keys.forEach(k => {
+          if (k.startsWith('solace_entity_')) {
+            try { JSON.parse(localStorage.getItem(k)); } catch {
+              console.warn(`[SOLACE Recovery] Removing corrupt key: ${k}`);
+              localStorage.removeItem(k);
+            }
+          }
+        });
+      } catch { /* ignore */ }
+    }
+  });
+
+  // Unhandled promise rejections
+  window.addEventListener('unhandledrejection', (e) => {
+    console.warn('[SOLACE Recovery] Unhandled rejection:', e.reason);
+    e.preventDefault(); // Prevent crash
+  });
+
+  // Periodic health check
+  setInterval(() => {
+    // Check DOM is alive
+    const root = document.getElementById('root');
+    if (root && root.children.length === 0) {
+      console.warn('[SOLACE Recovery] Empty root detected — app may have crashed');
+    }
+
+    // Check memory (Chrome only)
+    const perf = /** @type {any} */ (performance);
+    if (perf.memory) {
+      const pct = perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit;
+      if (pct > 0.85) {
+        console.warn(`[SOLACE Recovery] High memory usage: ${(pct * 100).toFixed(0)}%`);
+      }
+    }
+
+    // Reset error counter if things are stable
+    if (consecutiveErrors > 0) consecutiveErrors = Math.max(0, consecutiveErrors - 1);
+  }, HEALTH_CHECK_INTERVAL);
+
+  console.info('[SOLACE Recovery] Auto-recovery system active');
+}
+
+// Start recovery on load
+if (typeof window !== 'undefined') initAutoRecovery();
 
 // CSS injected once
 const cssInjected = React.useRef ? false : false
@@ -352,8 +423,19 @@ function OwnerDashboard() {
   const [PageComponent, setPageComponent] = React.useState(null)
   const [pageError, setPageError] = React.useState(null)
   const [loadingPage, setLoadingPage] = React.useState(false)
+  const [showFullMenu, setShowFullMenu] = React.useState(false)
 
   React.useEffect(() => { injectCSS() }, [])
+
+  // Listen for navigation events from Chat/Oracle intent routing
+  React.useEffect(() => {
+    const handler = (e) => {
+      const page = e.detail?.page;
+      if (page) navigateTo(page);
+    };
+    window.addEventListener('solace-navigate', handler);
+    return () => window.removeEventListener('solace-navigate', handler);
+  }, []);
 
   const navigateTo = (pageName) => {
     setLoadingPage(true)
@@ -406,7 +488,7 @@ function OwnerDashboard() {
               <PageComponent />
             </React.Suspense>
           </PageErrorBoundary>
-          <FloatingOracleOrb onNavigate={navigateTo} onGoHome={goHome} />
+          <OracleMaster onNavigate={navigateTo} onGoHome={goHome} />
         </div>
       </BrowserRouter>
     )
@@ -440,7 +522,6 @@ function OwnerDashboard() {
   }
 
   // Main dashboard - Oracle-centric
-  const [showFullMenu, setShowFullMenu] = React.useState(false)
   const stats = [
     { num: '20', label: 'AI Specialists', color: '#a855f7' },
     { num: '45', label: 'Total Pages', color: '#ec4899' },
@@ -547,7 +628,7 @@ function OwnerDashboard() {
       )}
 
       {/* ORACLE IS THE MAIN INTERFACE */}
-      <FloatingOracleOrb onNavigate={navigateTo} onGoHome={goHome} />
+      <OracleMaster onNavigate={navigateTo} onGoHome={goHome} />
     </div>
   )
 }

@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Send, Loader2, Shield, Camera, Mic, Activity, Wifi, BrainCircuit } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { allSpecialists } from '../components/data/specialists';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
@@ -171,12 +169,10 @@ export default function SpecialistChat() {
         <div className="p-4 bg-gradient-to-r from-amber-900/80 to-yellow-800/80 backdrop-blur-md">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-2">
-              <Link to={createPageUrl('AllSpecialists')}>
-                <Button variant="ghost" className="text-white hover:bg-white/20">
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  All Specialists
-                </Button>
-              </Link>
+              <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                All Specialists
+              </Button>
               {isAdmin && (
                 <Badge className="bg-red-600 text-white px-4 py-2">
                   <Shield className="w-4 h-4 mr-2" />

@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Camera, Loader2, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -133,12 +131,10 @@ Be detailed, helpful, and focus on practical information.`,
     <div className="relative min-h-screen bg-gradient-to-br from-amber-50 via-yellow-100 to-amber-200">
       <div className="relative z-10 min-h-screen flex flex-col p-6">
         <div className="mb-6">
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-gray-800 hover:bg-white/40">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-gray-800 hover:bg-white/40" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </Button>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center max-w-4xl mx-auto w-full">

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { motion } from 'framer-motion';
 import VideoToolSelector from '../components/video/VideoToolSelector.jsx';
 import VideoStyleTransfer from '../components/video/VideoStyleTransfer.jsx';
@@ -120,17 +118,13 @@ export default function VideoEditor() {
         {/* Header */}
         <div className="p-4 bg-gradient-to-r from-purple-900/80 to-pink-900/80 backdrop-blur-md">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <Link to={createPageUrl('Home', { appFace: 'luma', from: 'VideoEditor' })}>
-              <button className="text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all">
+            <button onClick={() => window.history.back()} className="text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all">
                 <ArrowLeft className="w-5 h-5" />
-              </button>
-            </Link>
+            </button>
             <h1 className="text-2xl font-bold text-white">Luma AI Video Editor</h1>
-            <Link to={createPageUrl('MediaLibrary', { appFace: 'luma', from: 'VideoEditor' })}>
-              <button className="text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all text-sm">
+            <button onClick={() => window.history.back()} className="text-white hover:bg-white/20 px-3 py-2 rounded-lg transition-all text-sm">
                 📚 Library
-              </button>
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -200,11 +194,9 @@ export default function VideoEditor() {
                       >
                         Download
                       </button>
-                      <Link to={createPageUrl('MediaLibrary', { appFace: 'luma', from: 'VideoEditor' })}>
-                        <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-lg transition-colors">
+                      <button onClick={() => window.history.back()} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded-lg transition-colors">
                           View in Library
-                        </button>
-                      </Link>
+                      </button>
                     </motion.div>
                   )}
                 </div>

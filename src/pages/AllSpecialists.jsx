@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Search } from 'lucide-react';
 import { allSpecialists } from '../components/data/specialists';
 import { motion } from 'framer-motion';
@@ -81,7 +79,7 @@ export default function AllSpecialists() {
   return (
     <div className="relative min-h-screen bg-black">
       {/* Oracle Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <AnimatedOracle gender={profile?.oracle_gender || 'female'} />
       </div>
 
@@ -89,12 +87,10 @@ export default function AllSpecialists() {
       <div className="relative z-10 min-h-screen flex flex-col p-6">
         <div className="mb-6">
           {view === 'categories' ? (
-            <Link to={createPageUrl('Home')}>
-              <Button variant="ghost" className="text-white hover:bg-white/20">
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Home
-              </Button>
-            </Link>
+            <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back to Home
+            </Button>
           ) : (
             <Button variant="ghost" className="text-white hover:bg-white/20" onClick={handleBack}>
               <ArrowLeft className="w-5 h-5 mr-2" />

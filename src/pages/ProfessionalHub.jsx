@@ -1,6 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Briefcase, FileText, DollarSign, Code, Mail, Calendar, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
@@ -20,19 +18,17 @@ export default function ProfessionalHub() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
-      <div className="fixed inset-0 z-0">
+      <div className="absolute inset-0 z-0">
         <AnimatedOracle gender="female" />
       </div>
 
       <div className="relative z-10 min-h-screen p-6">
         <div className="mb-6">
-          <Link to={createPageUrl('Home')}>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <FuturisticOrb size="sm" glowColor="purple">
-                <ArrowLeft className="w-6 h-6 text-purple-400" />
-              </FuturisticOrb>
-            </motion.button>
-          </Link>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => window.history.back()}>
+            <FuturisticOrb size="sm" glowColor="purple">
+              <ArrowLeft className="w-6 h-6 text-purple-400" />
+            </FuturisticOrb>
+          </motion.button>
         </div>
 
         <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
@@ -53,16 +49,14 @@ export default function ProfessionalHub() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.1 }}
               >
-                <Link to={createPageUrl(feature.page)}>
-                  <motion.div whileHover={{ y: -15, scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                    <FuturisticOrb size="xl" glowColor={feature.color}>
-                      <div className="text-center p-2">
-                        <Icon className="w-10 h-10 text-white mx-auto mb-2" />
-                        <p className="text-xs text-white font-bold leading-tight">{feature.name}</p>
-                      </div>
-                    </FuturisticOrb>
-                  </motion.div>
-                </Link>
+                <motion.div whileHover={{ y: -15, scale: 1.1 }} whileTap={{ scale: 0.9 }} className="cursor-pointer">
+                  <FuturisticOrb size="xl" glowColor={feature.color}>
+                    <div className="text-center p-2">
+                      <Icon className="w-10 h-10 text-white mx-auto mb-2" />
+                      <p className="text-xs text-white font-bold leading-tight">{feature.name}</p>
+                    </div>
+                  </FuturisticOrb>
+                </motion.div>
               </motion.div>
             );
           })}

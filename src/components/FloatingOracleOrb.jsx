@@ -168,78 +168,102 @@ Oracle:`,
   };
 
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Pink Neon Cyberpunk Background Glow */}
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {/* Bright White/Pink Background for Orb Area - HIGHLY VISIBLE */}
+      <div className="absolute top-0 left-0 right-0 h-[60vh] bg-gradient-to-b from-white/20 via-pink-500/10 to-transparent pointer-events-none" />
+      
+      {/* Pink Neon Cyberpunk Background Glow - BRIGHTER */}
       <div 
-        className="absolute inset-0 transition-opacity duration-300"
+        className="absolute inset-0 transition-opacity duration-300 pointer-events-none"
         style={{
-          background: `radial-gradient(circle at 50% 40%, rgba(236, 72, 153, ${glowIntensity}), transparent 60%)`,
-          opacity: isSpeaking ? 1 : 0.5
+          background: `radial-gradient(circle at 50% 30%, rgba(236, 72, 153, ${glowIntensity * 1.5}), rgba(139, 92, 246, ${glowIntensity * 0.8}), transparent 70%)`,
+          opacity: isSpeaking ? 1 : 0.7
         }}
       />
 
-      {/* Light Gray Background for Orb Area */}
-      <div className="absolute top-0 left-0 right-0 h-[45vh] bg-gradient-to-b from-gray-100/10 to-transparent" />
-
-      {/* Floating Oracle Orb - Much larger and more prominent */}
-      <div className="absolute top-[8vh] left-1/2 -translate-x-1/2 pointer-events-auto">
+      {/* Floating Oracle Orb - MASSIVE AND ULTRA VISIBLE */}
+      <div className="absolute top-[20vh] left-1/2 -translate-x-1/2 pointer-events-none">
         <motion.div
           animate={{
             scale: orbScale * pulseIntensity,
             rotateY: [0, 360],
+            rotateZ: [0, 360]
           }}
           transition={{
             scale: { duration: 0.15, ease: 'easeInOut' },
-            rotateY: { duration: 8, repeat: Infinity, ease: 'linear' }
+            rotateY: { duration: 12, repeat: Infinity, ease: 'linear' },
+            rotateZ: { duration: 20, repeat: Infinity, ease: 'linear' }
           }}
-          className="relative w-48 h-48"
+          className="relative w-64 h-64"
         >
-          {/* Outer Glow Rings - Much stronger */}
+          {/* Outer Glow Rings - ULTRA BRIGHT */}
           <motion.div
             animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.5, 0.8, 0.5]
+              scale: [1, 1.4, 1],
+              opacity: [0.8, 1, 0.8]
             }}
             transition={{
               duration: 2,
               repeat: Infinity,
               ease: 'easeInOut'
             }}
-            className="absolute -inset-8 rounded-full"
+            className="absolute -inset-16 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(34, 211, 238, 0.6), rgba(6, 182, 212, 0.3), transparent 70%)',
-              filter: 'blur(30px)'
+              background: 'radial-gradient(circle, rgba(34, 211, 238, 1), rgba(6, 182, 212, 0.8), rgba(34, 211, 238, 0.4), transparent 70%)',
+              filter: 'blur(40px)',
+              boxShadow: '0 0 100px rgba(34, 211, 238, 0.8), 0 0 200px rgba(34, 211, 238, 0.4)'
             }}
           />
 
-          {/* Secondary glow ring */}
+          {/* Secondary glow ring - PINK */}
           <motion.div
             animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.3, 0.6, 0.3]
+              scale: [1.3, 1, 1.3],
+              opacity: [0.6, 0.9, 0.6]
             }}
             transition={{
               duration: 3,
               repeat: Infinity,
               ease: 'easeInOut'
             }}
-            className="absolute -inset-12 rounded-full"
+            className="absolute -inset-20 rounded-full pointer-events-none"
             style={{
-              background: 'radial-gradient(circle, rgba(236, 72, 153, 0.4), transparent 60%)',
-              filter: 'blur(40px)'
+              background: 'radial-gradient(circle, rgba(236, 72, 153, 0.8), rgba(236, 72, 153, 0.4), transparent 60%)',
+              filter: 'blur(50px)',
+              boxShadow: '0 0 120px rgba(236, 72, 153, 0.6)'
+            }}
+          />
+          
+          {/* White core glow */}
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.9, 1, 0.9]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: 'easeInOut'
+            }}
+            className="absolute -inset-8 rounded-full pointer-events-none"
+            style={{
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5), transparent 60%)',
+              filter: 'blur(25px)'
             }}
           />
 
-          {/* Main Orb - Electric Light Blue Gemstone - Larger */}
-          <div className="absolute inset-0 rounded-full overflow-hidden"
+          {/* Main Orb - ULTRA BRIGHT Electric Light Blue Gemstone */}
+          <div className="absolute inset-0 rounded-full overflow-hidden pointer-events-none"
             style={{
-              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
+              background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 30%, #0891b2 60%, #0e7490 100%)',
               boxShadow: `
-                0 0 60px rgba(34, 211, 238, 1),
-                0 0 120px rgba(34, 211, 238, 0.6),
-                0 0 180px rgba(34, 211, 238, 0.3),
-                inset 0 0 80px rgba(255, 255, 255, 0.5),
-                inset -30px -30px 60px rgba(6, 182, 212, 0.6)
+                0 0 80px rgba(34, 211, 238, 1),
+                0 0 160px rgba(34, 211, 238, 0.8),
+                0 0 240px rgba(34, 211, 238, 0.5),
+                0 0 320px rgba(34, 211, 238, 0.3),
+                inset 0 0 100px rgba(255, 255, 255, 0.8),
+                inset -40px -40px 80px rgba(6, 182, 212, 0.7),
+                inset 40px 40px 80px rgba(255, 255, 255, 0.4)
               `
             }}
           >
@@ -299,8 +323,8 @@ Oracle:`,
         </motion.div>
       </div>
 
-      {/* Chat Interface - Text Flows Around Orb */}
-      <div className="absolute top-[45vh] left-0 right-0 bottom-0 pointer-events-auto">
+      {/* Chat Interface - BRIGHT AND VISIBLE */}
+      <div className="absolute bottom-0 left-0 right-0 h-[35vh] pointer-events-auto bg-gradient-to-t from-black/60 via-black/40 to-transparent backdrop-blur-sm">
         <div className="h-full flex flex-col max-w-4xl mx-auto px-6">
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto mb-4 space-y-4 scrollbar-thin scrollbar-thumb-cyan-500/20 scrollbar-track-transparent">
@@ -355,10 +379,10 @@ Oracle:`,
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Speak to the Oracle... ask anything, command anything"
-                className="w-full px-6 py-4 pr-32 rounded-2xl bg-gray-900/80 border border-cyan-400/30 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                className="w-full px-6 py-5 pr-32 rounded-2xl bg-white/10 border-2 border-cyan-400/60 text-white placeholder-cyan-200/60 focus:outline-none focus:border-cyan-300 focus:ring-4 focus:ring-cyan-400/40 transition-all text-lg font-medium"
                 style={{
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 0 40px rgba(34, 211, 238, 0.1)'
+                  backdropFilter: 'blur(30px)',
+                  boxShadow: '0 0 60px rgba(34, 211, 238, 0.4), inset 0 2px 20px rgba(255, 255, 255, 0.1)'
                 }}
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -382,10 +406,10 @@ Oracle:`,
                 </button>
               </div>
             </div>
-            <div className="mt-2 text-center text-xs text-gray-400 font-mono">
-              {isThinking && "Oracle is thinking..."}
-              {isSpeaking && "Oracle is speaking..."}
-              {!isThinking && !isSpeaking && "The Oracle has ultimate control and knowledge"}
+            <div className="mt-3 text-center text-sm font-semibold" style={{ color: '#22d3ee', textShadow: '0 0 20px rgba(34, 211, 238, 0.8)' }}>
+              {isThinking && "🧠 Oracle is thinking..."}
+              {isSpeaking && "💬 Oracle is speaking..."}
+              {!isThinking && !isSpeaking && "✨ The Oracle has ultimate control and knowledge ✨"}
             </div>
           </div>
         </div>

@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Store, Users, Coins, Map } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
@@ -47,19 +45,17 @@ export default function SovereignMall() {
       <PrivacyToggle />
       <OracleEye />
 
-      <div className="fixed inset-0 z-0">
+      <div className="absolute inset-0 z-0">
         <AnimatedOracle gender="female" />
       </div>
 
       <div className="relative z-10 min-h-screen p-6">
         <div className="mb-6">
-          <Link to={createPageUrl('Home')}>
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <FuturisticOrb size="sm" glowColor="purple">
-                <ArrowLeft className="w-6 h-6 text-purple-400" />
-              </FuturisticOrb>
-            </motion.button>
-          </Link>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => window.history.back()}>
+            <FuturisticOrb size="sm" glowColor="purple">
+              <ArrowLeft className="w-6 h-6 text-purple-400" />
+            </FuturisticOrb>
+          </motion.button>
         </div>
 
         <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">

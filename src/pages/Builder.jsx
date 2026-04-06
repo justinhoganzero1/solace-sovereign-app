@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { createPageUrl } from '../utils';
 import { Upload, ArrowLeft, Zap, X, Loader2, Hammer, ClipboardList, ShieldAlert, Ruler } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
@@ -138,7 +136,7 @@ Be thorough, practical, sequence-aware, and include the major risks that could c
   if (mode === 'instructions' && instructions) {
     return (
       <div className="relative min-h-screen bg-black">
-        <div className="fixed inset-0 z-0 pointer-events-none opacity-30">
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
           <AnimatedOracle gender={profile?.oracle_gender || 'female'} />
         </div>
 
@@ -296,18 +294,16 @@ Be thorough, practical, sequence-aware, and include the major risks that could c
 
   return (
     <div className="relative min-h-screen bg-black">
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <AnimatedOracle gender={profile?.oracle_gender || 'female'} />
       </div>
 
       <div className="relative z-10 min-h-screen flex flex-col p-6">
         <div className="mb-6">
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-white hover:bg-white/20">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </Button>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">

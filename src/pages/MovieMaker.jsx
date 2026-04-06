@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Film, Download, Loader2, Sparkles, ChevronLeft, Clapperboard, Wand2, Users, Eye, Volume2, Layers, Play, RotateCcw, Palette, Settings2, Star, Clock } from 'lucide-react';
@@ -59,24 +60,14 @@ function createPackage(data) {
 function CinematicBg({ genre }) {
   const p = PALETTES[genre] || PALETTES.drama;
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+    <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 0, background: '#0a0a1a' }}>
       <div className="absolute inset-0" style={{
-        background: `radial-gradient(ellipse 120% 80% at 20% 10%, ${p[0]}18 0%, transparent 60%), radial-gradient(ellipse 100% 60% at 80% 90%, ${p[1]}12 0%, transparent 50%), linear-gradient(180deg, #030712 0%, #07091a 50%, #030712 100%)`
+        background: `radial-gradient(ellipse 120% 80% at 20% 10%, ${p[0]}30 0%, transparent 60%), 
+                     radial-gradient(ellipse 100% 60% at 80% 90%, ${p[1]}20 0%, transparent 50%), 
+                     linear-gradient(180deg, #0a0a1a 0%, #12122a 50%, #0a0a1a 100%)`
       }} />
-      <svg className="absolute inset-0 w-full h-full opacity-[0.03]">
-        <defs><pattern id="cgrid" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M 80 0 L 0 0 0 80" fill="none" stroke="white" strokeWidth="0.5" /></pattern></defs>
-        <rect width="100%" height="100%" fill="url(#cgrid)" />
-      </svg>
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="absolute rounded-full animate-pulse" style={{
-          width: `${180 + i * 100}px`, height: `${180 + i * 100}px`,
-          left: `${5 + i * 16}%`, top: `${10 + (i % 3) * 25}%`,
-          background: `radial-gradient(circle, ${p[i % 3]}06, transparent 70%)`,
-          animationDuration: `${4 + i * 1.2}s`, animationDelay: `${i * 0.5}s`
-        }} />
-      ))}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${p[0]}30, ${p[1]}30, transparent)` }} />
-      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${p[1]}30, ${p[0]}30, transparent)` }} />
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${p[0]}50, ${p[1]}50, transparent)` }} />
+      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${p[1]}50, ${p[0]}50, transparent)` }} />
     </div>
   );
 }
@@ -196,35 +187,143 @@ export default function MovieMaker() {
     if (!canGenerate) return;
     setGenerating(true); setProgress(0); setMovie(null);
     try {
-      setProgress(8); await wait(350);
-      const dlg = extractDlg(movieScript).map((e, i, a) => ({ ...e, timestamp: i * Math.max(1, Math.floor(duration / Math.max(a.length, 1))) }));
-      const scenes = buildScenes(splitSections(movieScript), duration, genre);
-      const chars = inferChars(movieScript, dlg);
-      setProgress(22); await wait(400);
-      setProgress(45); await wait(450);
-      const renderedScenes = scenes.map((sc) => ({
-        sceneNumber: sc.number, duration: sc.duration, setting: sc.setting,
-        description: sc.description, visual: sc.visual,
-        coverUrl: buildSceneCover(sc.number, genre)
-      }));
-      setProgress(65); await wait(400);
-      const voiceover = dlg.map(l => ({ character: l.character, line: l.line, timestamp: l.timestamp, voice: `${l.character} - ${STYLES[style].name}` }));
-      setProgress(85); await wait(350);
+      // Step 1: Parse user script
+      setProgress(5); await wait(200);
+      const rawDlg = extractDlg(movieScript);
+      const rawSections = splitSections(movieScript);
+      const rawChars = inferChars(movieScript, rawDlg);
+      setProgress(12); await wait(200);
+
+      let aiScenes = null;
+      let aiDialogue = null;
+      let aiCharacters = null;
+
+      // Step 2: Try AI-powered screenplay expansion
+      setProgress(18);
+      try {
+        const aiPrompt = `You are an elite AI film director. Expand this screenplay concept into a complete production package.
+
+TITLE: ${movieTitle}
+GENRE: ${genre}
+STYLE: ${STYLES[style].name}
+DURATION: ${duration} seconds
+USER SCRIPT:
+${movieScript}
+
+Generate a JSON response with this structure:
+{
+  "scenes": [
+    { "number": 1, "description": "Vivid cinematic description of what happens", "setting": "Location description", "visual": "Camera direction (e.g. Wide establishing, Close-up, Tracking shot)", "mood": "Emotional tone", "duration": 10 }
+  ],
+  "characters": [
+    { "name": "Character Name", "role": "lead/supporting", "description": "Brief character description" }
+  ],
+  "dialogue": [
+    { "character": "Name", "line": "What they say", "direction": "How they say it", "timestamp": 0 }
+  ],
+  "director_notes": "Overall creative direction for this production"
+}
+
+Rules:
+- Create ${Math.max(3, Math.ceil(duration / 15))} scenes minimum
+- Scene durations must sum to approximately ${duration} seconds  
+- Expand the user's script with cinematic detail — don't just repeat it
+- Add visual directions, mood, and setting for each scene
+- If dialogue exists, enhance it. If none, create fitting dialogue
+- Characters should have distinct personalities`;
+
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: aiPrompt,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              scenes: { type: "array", items: { type: "object", properties: { number: {type:"integer"}, description: {type:"string"}, setting: {type:"string"}, visual: {type:"string"}, mood: {type:"string"}, duration: {type:"integer"} }}},
+              characters: { type: "array", items: { type: "object", properties: { name: {type:"string"}, role: {type:"string"}, description: {type:"string"} }}},
+              dialogue: { type: "array", items: { type: "object", properties: { character: {type:"string"}, line: {type:"string"}, direction: {type:"string"}, timestamp: {type:"integer"} }}},
+              director_notes: { type: "string" }
+            }
+          }
+        });
+        const aiData = result?.data || result;
+        if (aiData?.scenes?.length) {
+          aiScenes = aiData.scenes;
+          aiDialogue = aiData.dialogue || [];
+          aiCharacters = aiData.characters || [];
+        }
+      } catch (aiErr) {
+        console.log('AI expansion unavailable, using enhanced local generation:', aiErr.message);
+      }
+
+      setProgress(45); await wait(300);
+
+      // Step 3: Build scenes (AI or enhanced local fallback)
+      let renderedScenes;
+      if (aiScenes) {
+        renderedScenes = aiScenes.map(sc => ({
+          sceneNumber: sc.number, duration: sc.duration || Math.ceil(duration / aiScenes.length),
+          setting: sc.setting || `${genre} environment`, description: sc.description,
+          visual: sc.visual || 'Wide shot', mood: sc.mood || genre,
+          coverUrl: buildSceneCover(sc.number, genre)
+        }));
+      } else {
+        // Enhanced local fallback: generate richer scenes from script
+        const sections = rawSections.length > 0 ? rawSections : [movieScript];
+        const numScenes = Math.max(3, Math.ceil(duration / 15));
+        const VISUALS = ['Wide establishing shot', 'Close-up with shallow DOF', 'Tracking dolly shot', 'Over-the-shoulder', 'Aerial crane shot', 'Dutch angle', 'Steadicam follow', 'POV shot', 'Two-shot dialogue', 'Extreme close-up'];
+        const MOODS = { drama: ['tense','melancholic','hopeful','confrontational'], comedy: ['upbeat','awkward','chaotic','heartwarming'], action: ['explosive','suspenseful','adrenaline','climactic'], scifi: ['mysterious','awe-inspiring','dystopian','transcendent'], horror: ['dread','paranoia','shock','eerie'], romance: ['tender','passionate','bittersweet','euphoric'], documentary: ['reflective','urgent','revelatory','contemplative'], fantasy: ['magical','ominous','wondrous','epic'] };
+        const genreMoods = MOODS[genre] || MOODS.drama;
+        renderedScenes = [];
+        for (let i = 0; i < numScenes; i++) {
+          const sectionText = sections[i % sections.length] || '';
+          const cleanText = norm(sectionText);
+          const settingMatch = cleanText.match(/(?:INT\.|EXT\.|in|at|inside|outside|near)\s+([^,.!?\n]+)/i);
+          renderedScenes.push({
+            sceneNumber: i + 1,
+            duration: i === numScenes - 1 ? Math.max(3, duration - Math.floor(duration / numScenes) * i) : Math.floor(duration / numScenes),
+            setting: settingMatch?.[1]?.trim() || `${genre.charAt(0).toUpperCase()+genre.slice(1)} location ${i+1}`,
+            description: cleanText || `Scene ${i+1}: A pivotal ${genre} moment that advances the story of "${movieTitle}".`,
+            visual: VISUALS[i % VISUALS.length],
+            mood: genreMoods[i % genreMoods.length],
+            coverUrl: buildSceneCover(i + 1, genre)
+          });
+        }
+      }
+
+      setProgress(65); await wait(300);
+
+      // Step 4: Build characters
+      const characters = aiCharacters?.length > 0
+        ? aiCharacters.map(c => ({ name: c.name, role: c.role || 'supporting', description: c.description || '' }))
+        : rawChars.length > 0
+          ? rawChars.map(c => ({ ...c, description: '' }))
+          : [{ name: movieTitle.split(' ')[0] || 'Protagonist', role: 'lead', description: 'The central character' }];
+
+      setProgress(78); await wait(200);
+
+      // Step 5: Build dialogue/voiceover
+      const voiceover = aiDialogue?.length > 0
+        ? aiDialogue.map(l => ({ character: l.character, line: l.line, timestamp: l.timestamp || 0, voice: `${l.character} - ${STYLES[style].name}`, direction: l.direction || '' }))
+        : rawDlg.map((l, i, a) => ({ character: l.character, line: l.line, timestamp: i * Math.max(1, Math.floor(duration / Math.max(a.length, 1))), voice: `${l.character} - ${STYLES[style].name}` }));
+
+      setProgress(90); await wait(200);
+
+      // Step 6: Create downloadable package
       const pkg = createPackage({
-        title: movieTitle, genre, duration, style,
+        title: movieTitle, genre, duration, style: STYLES[style].name,
         generatedAt: new Date().toISOString(),
-        scenes: renderedScenes, characters: chars, dialogue: voiceover,
+        scenes: renderedScenes, characters, dialogue: voiceover,
         productionPlan: {
           opening: renderedScenes[0]?.description,
           midpoint: renderedScenes[Math.floor(renderedScenes.length / 2)]?.description,
           ending: renderedScenes[renderedScenes.length - 1]?.description
         }
       });
+
       setProgress(100); await wait(250);
       setMovie({
         title: movieTitle, posterUrl: buildPoster(movieTitle, genre, style),
-        duration, genre, scenes: renderedScenes, voiceover, characters: chars,
-        downloadUrl: pkg, fileSize: `${Math.max(1, renderedScenes.length * 0.4).toFixed(1)} MB`,
+        duration, genre, scenes: renderedScenes, voiceover, characters,
+        downloadUrl: pkg, fileSize: `${Math.max(1, renderedScenes.length * 0.8).toFixed(1)} MB`,
         generatedAt: new Date().toISOString()
       });
     } catch (e) { console.error('Generation error:', e); } finally { setGenerating(false); }
@@ -242,130 +341,19 @@ export default function MovieMaker() {
 
   /* ─── RENDER ─── */
   return (
-    <div id="movie-maker-root" className="relative min-h-screen overflow-hidden select-none" style={{ background: '#030712' }}>
-      {/* Override global CSS !important rules that make everything black */}
+    <div id="movie-maker-root" className="relative min-h-screen overflow-hidden" style={{ background: '#0a0a1a' }}>
+      {/* Simplified CSS overrides */}
       <style>{`
-        #movie-maker-root,
-        #movie-maker-root * {
-          box-sizing: border-box;
-        }
-        #movie-maker-root .rounded-xl,
-        #movie-maker-root .rounded-lg,
-        #movie-maker-root .rounded-2xl,
-        #movie-maker-root .rounded-md,
-        #movie-maker-root [class*="rounded"] {
-          background: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-        }
-        #movie-maker-root header {
-          background: rgba(10,12,30,0.95) !important;
-          border-bottom: 1px solid rgba(139,92,246,0.25) !important;
-          backdrop-filter: blur(20px) !important;
-        }
-        #movie-maker-root .mm-sidebar {
-          background: rgba(10,12,30,0.95) !important;
-          border-right: 1px solid rgba(139,92,246,0.2) !important;
-        }
-        #movie-maker-root .mm-sidebar .flex.border-b {
-          border-bottom: 1px solid rgba(139,92,246,0.15) !important;
-        }
-        #movie-maker-root .mm-sidebar button {
-          background: transparent !important;
-          border: none !important;
-        }
-        #movie-maker-root .mm-sidebar .border-b-2 {
-          border-bottom: 2px solid rgba(34,211,238,0.8) !important;
-        }
+        #movie-maker-root { color: white; }
         #movie-maker-root .mm-glass {
-          background: rgba(15,17,40,0.9) !important;
-          backdrop-filter: blur(24px) !important;
-          border: 1px solid rgba(139,92,246,0.25) !important;
-          box-shadow: 0 0 40px rgba(139,92,246,0.08), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+          background: rgba(20,20,40,0.8) !important;
+          backdrop-filter: blur(20px) !important;
+          border: 1px solid rgba(139,92,246,0.3) !important;
         }
-        #movie-maker-root .mm-glass:hover {
-          border-color: rgba(139,92,246,0.4) !important;
-        }
-        #movie-maker-root textarea {
-          background: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-          color: rgba(255,255,255,0.9) !important;
-          padding: 16px !important;
-          font-size: 14px !important;
-        }
-        #movie-maker-root textarea::placeholder {
-          color: rgba(255,255,255,0.25) !important;
-          font-style: normal !important;
-        }
-        #movie-maker-root input[type="text"],
-        #movie-maker-root input[type="number"],
-        #movie-maker-root input:not([type]) {
-          background: rgba(255,255,255,0.06) !important;
+        #movie-maker-root textarea, #movie-maker-root input {
+          background: rgba(0,0,0,0.3) !important;
           border: 1px solid rgba(139,92,246,0.3) !important;
           color: white !important;
-          border-radius: 12px !important;
-        }
-        #movie-maker-root input:focus {
-          border-color: rgba(34,211,238,0.5) !important;
-          box-shadow: 0 0 0 3px rgba(34,211,238,0.15) !important;
-          outline: none !important;
-        }
-        #movie-maker-root input::placeholder {
-          color: rgba(255,255,255,0.3) !important;
-          font-style: normal !important;
-        }
-        #movie-maker-root .mm-stat {
-          background: rgba(10,12,30,0.9) !important;
-          border: 1px solid rgba(139,92,246,0.15) !important;
-          backdrop-filter: blur(16px) !important;
-        }
-        #movie-maker-root .mm-scene {
-          background: rgba(10,12,30,0.8) !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
-          overflow: hidden !important;
-        }
-        #movie-maker-root .mm-scene:hover {
-          border-color: rgba(139,92,246,0.35) !important;
-        }
-        #movie-maker-root h1, #movie-maker-root h2, #movie-maker-root h3 {
-          -webkit-text-fill-color: unset !important;
-          background: none !important;
-          color: white !important;
-        }
-        #movie-maker-root label {
-          text-transform: none !important;
-          font-size: 10px !important;
-          color: rgba(255,255,255,0.45) !important;
-          font-weight: 500 !important;
-          letter-spacing: 0.15em !important;
-        }
-        #movie-maker-root p,
-        #movie-maker-root span,
-        #movie-maker-root div {
-          font-family: 'Segoe UI', system-ui, sans-serif !important;
-        }
-        #movie-maker-root [class*="flex"][class*="gap-2"],
-        #movie-maker-root [class*="flex"][class*="space-x"] {
-          border-bottom: none !important;
-          padding-bottom: 0 !important;
-        }
-        #movie-maker-root [class*="border-b"] {
-          border-bottom-color: rgba(139,92,246,0.15) !important;
-        }
-        #movie-maker-root .border-t {
-          border-top: 1px solid rgba(139,92,246,0.15) !important;
-        }
-        #movie-maker-root [role="tab"],
-        #movie-maker-root [class*="tab"] {
-          border-radius: 0 !important;
-        }
-        #movie-maker-root svg {
-          filter: none !important;
-        }
-        #movie-maker-root [class*="rounded-full"][class*="px-"] {
-          background: transparent !important;
-          border: none !important;
         }
       `}</style>
       <CinematicBg genre={genre} />

@@ -1,7 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Shield } from 'lucide-react';
 import AnimatedOracle from '../components/oracle/AnimatedOracle';
 import EmergencyWidget from '../components/safety/EmergencyWidget';
@@ -12,18 +10,16 @@ import SafeZoneManager from '../components/safety/SafeZoneManager';
 export default function SafetyCenter() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-black">
-      <div className="fixed inset-0 z-0">
+      <div className="absolute inset-0 z-0">
         <AnimatedOracle gender="female" />
       </div>
 
       <div className="relative z-10 min-h-screen p-6">
         <div className="mb-6">
-          <Link to={createPageUrl('Home')}>
-            <Button variant="ghost" className="text-white hover:bg-white/20">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back
-            </Button>
-          </Link>
+          <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back
+          </Button>
         </div>
 
         <div className="max-w-4xl mx-auto">

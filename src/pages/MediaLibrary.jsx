@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Link, useLocation } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { ArrowLeft, Star, Search, Folder, Tag, Download, Trash2, Heart, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +29,7 @@ const faceContent = {
 };
 
 export default function MediaLibrary() {
-  const location = useLocation();
+  const location = window.location;
   const [profile, setProfile] = useState(null);
   const [media, setMedia] = useState([]);
   const [filteredMedia, setFilteredMedia] = useState([]);
@@ -118,7 +116,7 @@ export default function MediaLibrary() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="fixed inset-0 z-0 opacity-20">
+      <div className="absolute inset-0 z-0 opacity-20">
         <AnimatedOracle gender={profile?.oracle_gender || 'female'} />
       </div>
 
@@ -192,12 +190,10 @@ export default function MediaLibrary() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Link to={createPageUrl(libraryFace.backPage, { appFace, from: 'MediaLibrary' })}>
-                <Button variant="ghost" className="text-white hover:bg-white/20">
-                  <ArrowLeft className="w-5 h-5 mr-2" />
-                  {libraryFace.backLabel}
-                </Button>
-              </Link>
+              <Button variant="ghost" className="text-white hover:bg-white/20" onClick={() => window.history.back()}>
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                {libraryFace.backLabel}
+              </Button>
               <div>
                 <h1 className="text-4xl font-bold text-white">{libraryFace.title}</h1>
                 <p className="mt-1 text-sm text-zinc-400">{libraryFace.subtitle}</p>

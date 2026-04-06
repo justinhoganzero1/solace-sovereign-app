@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ArrowLeft, User, Shield, Palette } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
@@ -74,12 +72,10 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-900 via-black to-gray-900 p-6">
       <div className="max-w-3xl mx-auto">
-        <Link to={createPageUrl('Home')}>
-          <Button variant="ghost" className="text-white mb-6 hover:bg-white/20">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Home
-          </Button>
-        </Link>
+        <Button variant="ghost" className="text-white mb-6 hover:bg-white/20" onClick={() => window.history.back()}>
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Home
+        </Button>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
